@@ -1,0 +1,23 @@
+# Release Include Rules for Markdown Support Plugin
+# Only files and patterns listed here will be included in release ZIPs
+# Format: One pattern per line (supports glob patterns)
+#
+# This is the PREFERRED method (vs .releaseignore blacklist approach)
+# Advantage: Explicit control, especially for selective vendor includes
+
+# Core PHP Files
+*.php
+.htaccess
+
+# Assets
+css/
+js/
+i18n/
+
+# Vendor (Runtime Dependencies Only)
+vendor/Parsedown.php
+
+# Documentation (User-facing)
+README.md
+LICENSE
+CHANGELOG.md

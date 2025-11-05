@@ -1,0 +1,23 @@
+# Allow direct access to markdown-preview.php API endpoint
+# This overrides the parent directory's "Deny from all" and prevents rewrite routing
+
+<Files "markdown-preview.php">
+    # Override parent directory's Deny from all (Apache 2.4+)
+    Require all granted
+
+    # Fallback for Apache 2.2
+    <IfModule !mod_authz_core.c>
+        Order allow,deny
+        Allow from all
+    </IfModule>
+
+    # Allow direct execution (prevent rewrite routing)
+    <IfModule mod_rewrite.c>
+        RewriteEngine Off
+    </IfModule>
+</Files>
+
+# Block direct access to log files (defense in depth)
+<FilesMatch "\.log$">
+    Require all denied
+</FilesMatch>

@@ -1,0 +1,745 @@
+/**
+ * Markdown Editor Styles for osTicket
+ *
+ * Vollständiges Styling für den Markdown-Editor mit:
+ * - Toolbar mit Buttons
+ * - Live Preview Pane
+ * - Format Switcher
+ * - Responsive Design (Mobile-First)
+ * - Dark Mode Support
+ * - Accessibility (WCAG 2.1 AA)
+ *
+ * @version 1.0.0
+ * @author Markdown-Support Plugin
+ */
+
+/* ============================================
+   Container & Layout
+   ============================================ */
+
+.markdown-editor-container {
+    position: relative;
+    width: 100%;
+    margin: 10px 0;
+    border: 1px solid #ddd;
+    border-radius: 4px;
+    background: #fff;
+    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+}
+
+/* Side-by-Side Layout (Desktop) */
+.markdown-editor-container.preview-side {
+    display: flex;
+    flex-direction: column;
+}
+
+/* Content-Wrapper für Editor + Preview (nebeneinander) */
+.markdown-editor-container.preview-side .markdown-content-area {
+    display: flex;
+    flex-direction: row;
+    flex: 1;
+}
+
+.markdown-editor-container.preview-side .markdown-editor-wrapper {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+}
+
+.markdown-editor-container.preview-side .markdown-preview-container {
+    flex: 1;
+    border-left: 1px solid #ddd;
+    min-width: 0; /* Prevent overflow */
+}
+
+/* Bottom Layout */
+.markdown-editor-container.preview-bottom .markdown-preview-container {
+    border-top: 1px solid #ddd;
+}
+
+/* ============================================
+   Toolbar
+   ============================================ */
+
+.markdown-toolbar {
+    display: flex;
+    align-items: center;
+    gap: 4px;
+    padding: 8px;
+    background: #f5f5f5;
+    border-bottom: 1px solid #ddd;
+    border-radius: 4px 4px 0 0;
+    flex-wrap: wrap;
+}
+
+/* Toolbar Buttons */
+.markdown-toolbar-btn {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 32px;
+    height: 32px;
+    padding: 0;
+    margin: 0;
+    border: 1px solid #ccc;
+    border-radius: 3px;
+    background: #fff;
+    color: #333;
+    cursor: pointer;
+    transition: all 0.2s ease;
+    outline: none;
+}
+
+.markdown-toolbar-btn:hover {
+    background: #e8e8e8;
+    border-color: #999;
+}
+
+.markdown-toolbar-btn:active {
+    background: #ddd;
+    transform: translateY(1px);
+}
+
+.markdown-toolbar-btn:focus {
+    outline: 2px solid #007bff;
+    outline-offset: 2px;
+}
+
+.markdown-toolbar-btn svg {
+    display: block;
+    pointer-events: none;
+}
+
+/* Format Switcher */
+.format-switcher {
+    margin-left: auto;
+    display: flex;
+    align-items: center;
+}
+
+.format-switcher-select {
+    padding: 4px 8px;
+    border: 1px solid #ccc;
+    border-radius: 3px;
+    background: #fff !important;
+    color: #333 !important;
+    font-size: 13px;
+    cursor: pointer;
+    outline: none;
+    transition: border-color 0.2s ease;
+    opacity: 1 !important;
+}
+
+.format-switcher-select:hover {
+    border-color: #999;
+}
+
+.format-switcher-select:focus {
+    border-color: #007bff;
+    outline: 2px solid #007bff;
+    outline-offset: 2px;
+}
+
+.format-switcher-select option {
+    color: #333 !important;
+    background: #fff !important;
+}
+
+/* Preview Toggle Button (Mobile only) */
+.markdown-preview-toggle {
+    display: none; /* Hidden by default, shown on mobile */
+    margin-left: 8px;
+}
+
+/* ============================================
+   Textarea
+   ============================================ */
+
+.markdown-editor-wrapper {
+    position: relative;
+    flex: 1;
+    display: flex;
+}
+
+.markdown-textarea {
+    flex: 1;
+    width: 100%;
+    min-height: 200px;
+    padding: 12px;
+    border: none;
+    border-radius: 0;
+    resize: vertical;
+    font-family: 'Monaco', 'Menlo', 'Ubuntu Mono', 'Consolas', monospace;
+    font-size: 14px;
+    line-height: 1.6;
+    color: #333 !important;
+    background: #fff !important;
+    outline: none;
+}
+
+.markdown-textarea:focus {
+    background: #fafafa !important;
+}
+
+/* ============================================
+   Preview Pane
+   ============================================ */
+
+.markdown-preview-container {
+    display: flex;
+    flex-direction: column;
+    background: #fafafa;
+}
+
+.markdown-preview-header {
+    padding: 8px 12px;
+    background: #f5f5f5;
+    border-bottom: 1px solid #ddd;
+    font-size: 12px;
+    font-weight: 600;
+    color: #666;
+    text-transform: uppercase;
+}
+
+.markdown-preview {
+    flex: 1;
+    padding: 12px;
+    overflow-y: auto;
+    min-height: 200px;
+    font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Roboto', 'Helvetica', 'Arial', sans-serif;
+    font-size: 14px;
+    line-height: 1.6;
+    color: #333;
+}
+
+/* Empty Preview State */
+.markdown-preview .preview-empty {
+    color: #999;
+    font-style: italic;
+    text-align: center;
+    margin-top: 60px;
+}
+
+/* Preview Content Styling (GitHub-ähnlich) */
+.markdown-preview h1,
+.markdown-preview h2,
+.markdown-preview h3,
+.markdown-preview h4,
+.markdown-preview h5,
+.markdown-preview h6 {
+    margin-top: 24px;
+    margin-bottom: 16px;
+    font-weight: 600;
+    line-height: 1.25;
+}
+
+.markdown-preview h1 {
+    font-size: 2em;
+    border-bottom: 1px solid #eee;
+    padding-bottom: 0.3em;
+}
+
+.markdown-preview h2 {
+    font-size: 1.5em;
+    border-bottom: 1px solid #eee;
+    padding-bottom: 0.3em;
+}
+
+.markdown-preview h3 {
+    font-size: 1.25em;
+}
+
+.markdown-preview h4 {
+    font-size: 1em;
+}
+
+.markdown-preview h5 {
+    font-size: 0.875em;
+}
+
+.markdown-preview h6 {
+    font-size: 0.85em;
+    color: #666;
+}
+
+.markdown-preview p {
+    margin-top: 0;
+    margin-bottom: 16px;
+}
+
+.markdown-preview strong {
+    font-weight: 600;
+}
+
+.markdown-preview em {
+    font-style: italic;
+}
+
+.markdown-preview a {
+    color: #007bff;
+    text-decoration: none;
+}
+
+.markdown-preview a:hover {
+    text-decoration: underline;
+}
+
+.markdown-preview code {
+    padding: 2px 6px;
+    background: #f6f8fa;
+    border: 1px solid #e1e4e8;
+    border-radius: 3px;
+    font-family: 'Monaco', 'Menlo', 'Ubuntu Mono', 'Consolas', monospace;
+    font-size: 85%;
+}
+
+.markdown-preview pre {
+    padding: 16px;
+    overflow: auto;
+    background: #f6f8fa;
+    border: 1px solid #e1e4e8;
+    border-radius: 4px;
+    margin-bottom: 16px;
+}
+
+.markdown-preview pre code {
+    padding: 0;
+    background: transparent;
+    border: none;
+    font-size: 100%;
+}
+
+.markdown-preview ul,
+.markdown-preview ol {
+    padding-left: 2em;
+    margin-top: 0;
+    margin-bottom: 16px;
+}
+
+.markdown-preview li {
+    margin-top: 0.25em;
+}
+
+.markdown-preview blockquote {
+    padding: 0 1em;
+    color: #666;
+    border-left: 4px solid #ddd;
+    margin: 0 0 16px 0;
+}
+
+.markdown-preview hr {
+    height: 1px;
+    padding: 0;
+    margin: 24px 0;
+    background-color: #e1e4e8;
+    border: 0;
+}
+
+.markdown-preview table {
+    width: 100%;
+    border-collapse: collapse;
+    margin-bottom: 16px;
+}
+
+.markdown-preview table th,
+.markdown-preview table td {
+    padding: 6px 13px;
+    border: 1px solid #ddd;
+}
+
+.markdown-preview table th {
+    background: #f6f8fa;
+    font-weight: 600;
+}
+
+.markdown-preview table tr:nth-child(even) {
+    background: #f6f8fa;
+}
+
+.markdown-preview img {
+    max-width: 100%;
+    height: auto;
+    border-radius: 4px;
+}
+
+/* ============================================
+   Format Switching States
+   ============================================ */
+
+/* Hide Markdown-specific elements when in HTML mode */
+.markdown-editor-container[data-format="html"] .markdown-toolbar-btn {
+    display: none;
+}
+
+.markdown-editor-container[data-format="html"] .markdown-preview-container {
+    display: none;
+}
+
+/* ============================================
+   Responsive Design (Mobile)
+   ============================================ */
+
+@media (min-width: 768px) {
+    /* Desktop: Side-by-Side Layout (already set via .markdown-content-area) */
+    .markdown-editor-container.preview-side .markdown-editor-wrapper,
+    .markdown-editor-container.preview-side .markdown-preview-container {
+        width: 50%;
+    }
+}
+
+@media (max-width: 767px) {
+    /* Mobile: Smaller toolbar buttons */
+    .markdown-toolbar-btn {
+        width: 28px;
+        height: 28px;
+    }
+
+    .markdown-toolbar-btn svg {
+        width: 14px;
+        height: 14px;
+    }
+
+    .format-switcher-select {
+        font-size: 12px;
+        padding: 3px 6px;
+    }
+
+    /* Show Preview Toggle Button */
+    .markdown-preview-toggle {
+        display: inline-flex;
+    }
+
+    /* Stack Preview below Editor */
+    .markdown-editor-container.preview-side .markdown-content-area {
+        flex-direction: column;
+    }
+
+    .markdown-editor-container.preview-side .markdown-editor-wrapper,
+    .markdown-editor-container.preview-side .markdown-preview-container {
+        width: 100%;
+    }
+
+    .markdown-editor-container.preview-side .markdown-preview-container {
+        border-left: none;
+        border-top: 1px solid #ddd;
+    }
+
+    /* Hide Preview by default on mobile (toggle with button) */
+    .markdown-editor-container .markdown-preview-container {
+        display: none;
+    }
+
+    .markdown-editor-container:not(.preview-hidden) .markdown-preview-container {
+        display: flex;
+    }
+
+    /* Reduce textarea min-height on mobile */
+    .markdown-textarea {
+        min-height: 150px;
+    }
+
+    .markdown-preview {
+        min-height: 150px;
+    }
+}
+
+/* ============================================
+   Dark Mode
+   ============================================ */
+
+@media (prefers-color-scheme: dark) {
+    .markdown-editor-container {
+        background: #1e1e1e;
+        border-color: #404040;
+    }
+
+    .markdown-toolbar {
+        background: #2d2d2d;
+        border-color: #404040;
+    }
+
+    .markdown-toolbar-btn {
+        background: #1e1e1e;
+        border-color: #404040;
+        color: #e0e0e0;
+    }
+
+    .markdown-toolbar-btn:hover {
+        background: #3a3a3a;
+        border-color: #555;
+    }
+
+    .markdown-toolbar-btn:active {
+        background: #2d2d2d;
+    }
+
+    .markdown-toolbar-btn:focus {
+        outline-color: #0d6efd;
+    }
+
+    .format-switcher-select {
+        background: #1e1e1e;
+        border-color: #404040;
+        color: #e0e0e0;
+    }
+
+    .format-switcher-select:hover {
+        border-color: #555;
+    }
+
+    .format-switcher-select:focus {
+        border-color: #0d6efd;
+        outline-color: #0d6efd;
+    }
+
+    .markdown-textarea {
+        background: #1e1e1e !important;
+        color: #e0e0e0 !important;
+    }
+
+    .markdown-textarea:focus {
+        background: #252525 !important;
+    }
+
+    .markdown-preview-container {
+        background: #252525;
+    }
+
+    .markdown-preview-header {
+        background: #2d2d2d;
+        border-color: #404040;
+        color: #aaa;
+    }
+
+    .markdown-preview {
+        color: #e0e0e0;
+    }
+
+    .markdown-preview .preview-empty {
+        color: #666;
+    }
+
+    .markdown-preview h1,
+    .markdown-preview h2 {
+        border-color: #404040;
+    }
+
+    .markdown-preview h6 {
+        color: #aaa;
+    }
+
+    .markdown-preview a {
+        color: #4da3ff;
+    }
+
+    .markdown-preview code {
+        background: #2d2d2d;
+        border-color: #404040;
+    }
+
+    .markdown-preview pre {
+        background: #2d2d2d;
+        border-color: #404040;
+    }
+
+    .markdown-preview blockquote {
+        color: #aaa;
+        border-left-color: #404040;
+    }
+
+    .markdown-preview hr {
+        background-color: #404040;
+    }
+
+    .markdown-preview table th,
+    .markdown-preview table td {
+        border-color: #404040;
+    }
+
+    .markdown-preview table th {
+        background: #2d2d2d;
+    }
+
+    .markdown-preview table tr:nth-child(even) {
+        background: #252525;
+    }
+}
+
+/* ============================================
+   Accessibility
+   ============================================ */
+
+/* Focus Styles */
+*:focus-visible {
+    outline: 2px solid #007bff;
+    outline-offset: 2px;
+}
+
+/* High Contrast Mode Support */
+@media (prefers-contrast: high) {
+    .markdown-toolbar-btn {
+        border-width: 2px;
+    }
+
+    .markdown-toolbar-btn:focus {
+        outline-width: 3px;
+    }
+
+    .markdown-preview code,
+    .markdown-preview pre {
+        border-width: 2px;
+    }
+}
+
+/* Reduced Motion */
+@media (prefers-reduced-motion: reduce) {
+    .markdown-toolbar-btn,
+    .format-switcher-select {
+        transition: none;
+    }
+}
+
+/* Screen Reader Only */
+.sr-only {
+    position: absolute;
+    width: 1px;
+    height: 1px;
+    padding: 0;
+    margin: -1px;
+    overflow: hidden;
+    clip: rect(0, 0, 0, 0);
+    white-space: nowrap;
+    border-width: 0;
+}
+
+/* ============================================
+   Print Styles
+   ============================================ */
+
+@media print {
+    /* Hide Editor, show only Preview */
+    .markdown-toolbar,
+    .markdown-editor-wrapper {
+        display: none !important;
+    }
+
+    .markdown-preview-container {
+        border: none;
+    }
+
+    .markdown-preview-header {
+        display: none;
+    }
+
+    .markdown-preview {
+        padding: 0;
+    }
+
+    /* Prevent page breaks inside code blocks */
+    .markdown-preview pre,
+    .markdown-preview blockquote {
+        page-break-inside: avoid;
+    }
+
+    /* Print links with URLs */
+    .markdown-preview a::after {
+        content: " (" attr(href) ")";
+        font-size: 0.8em;
+        color: #666;
+    }
+}
+
+/* ============================================
+   osTicket Integration Overrides
+   ============================================ */
+
+/* osTicket nutzt oft .form-control, überschreibe falls nötig */
+.markdown-editor-container .markdown-textarea.form-control {
+    border-radius: 0;
+    border: none;
+}
+
+/* osTicket's wysiwyg-editor kann interferieren */
+.markdown-editor-container .redactor-box {
+    display: none !important;
+}
+
+/* Stelle sicher, dass osTicket's existing styles nicht überschrieben werden */
+.markdown-editor-container input,
+.markdown-editor-container select,
+.markdown-editor-container button {
+    box-sizing: border-box;
+}
+
+/* ============================================
+   Utility Classes
+   ============================================ */
+
+.markdown-editor-fullscreen {
+    position: fixed;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    z-index: 9999;
+    margin: 0;
+    border-radius: 0;
+}
+
+.markdown-editor-fullscreen .markdown-textarea,
+.markdown-editor-fullscreen .markdown-preview {
+    min-height: calc(100vh - 100px);
+}
+
+/* Loading State */
+.markdown-preview.loading {
+    position: relative;
+    opacity: 0.5;
+}
+
+.markdown-preview.loading::after {
+    content: '';
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    width: 24px;
+    height: 24px;
+    margin: -12px 0 0 -12px;
+    border: 3px solid #007bff;
+    border-radius: 50%;
+    border-top-color: transparent;
+    animation: spinner 0.6s linear infinite;
+}
+
+@keyframes spinner {
+    to {
+        transform: rotate(360deg);
+    }
+}
+
+/* Error State */
+.markdown-preview.error {
+    border: 1px solid #dc3545;
+    background: #fff5f5;
+}
+
+.markdown-preview.error::before {
+    content: '⚠ Preview konnte nicht geladen werden';
+    display: block;
+    padding: 12px;
+    color: #dc3545;
+    font-weight: 600;
+    text-align: center;
+}
+
+/* Dark Mode Error State */
+@media (prefers-color-scheme: dark) {
+    .markdown-preview.error {
+        border-color: #dc3545;
+        background: #2d1e1e;
+    }
+
+    .markdown-preview.error::before {
+        color: #ff6b6b;
+    }
+}

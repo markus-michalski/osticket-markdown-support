@@ -1,0 +1,5 @@
+# Deny access to log files via HTTP
+# Logs should only be accessible via filesystem/SSH
+
+Order Deny,Allow
+Deny from all
