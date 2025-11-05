@@ -6,11 +6,8 @@
  * Tests the core rendering logic used by the Preview API to ensure
  * 100% identical output to backend rendering.
  *
- * NOTE: This test does NOT use the standard bootstrap because it tests
- * Parsedown rendering logic which has no osTicket dependencies.
+ * NOTE: Parsedown is loaded via Composer autoloader (vendor/autoload.php)
  */
-
-require_once __DIR__ . '/../../vendor/Parsedown.php';
 
 use PHPUnit\Framework\TestCase;
 
