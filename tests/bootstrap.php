@@ -22,8 +22,7 @@ if (!defined('ROOT_PATH')) {
 // Load osTicket mock classes FIRST (before plugin classes)
 require_once __DIR__ . '/Mocks/OsTicketMocks.php';
 
-// Load Parsedown library (required for MarkdownThreadEntryBody)
-require_once __DIR__ . '/../vendor/Parsedown.php';
+// Parsedown is loaded via Composer autoloader (vendor/autoload.php)
 
 // Load plugin classes (will use mocks for osTicket dependencies)
 require_once __DIR__ . '/../class.MarkdownPlugin.php';

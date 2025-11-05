@@ -27,11 +27,9 @@ jobs:
           coverage: none
 
       - name: Validate composer.json
-        if: matrix.php-version >= '8.1'
         run: composer validate --strict
 
       - name: Install Composer Dependencies
-        if: matrix.php-version >= '8.1'
         run: composer install --prefer-dist --no-progress --no-suggest
 
       - name: PHP Syntax Check
@@ -43,7 +41,6 @@ jobs:
           done
 
       - name: Run PHPUnit Tests
-        if: matrix.php-version >= '8.1'
         run: vendor/bin/phpunit --testdox
 
   package-validation:
@@ -78,5 +75,7 @@ jobs:
       - name: Check plugin.php metadata
         run: |
           echo "Checking plugin.php metadata..."
-          grep -q "class MarkdownPlugin" plugin.php || { echo "Error: Plugin class not found"; exit 1; }
+          grep -q "'id'" plugin.php || { echo "Error: Plugin ID not found"; exit 1; }
+          grep -q "class.MarkdownPlugin.php" plugin.php || { echo "Error: Plugin class reference not found"; exit 1; }
+          test -f class.MarkdownPlugin.php || { echo "Error: Plugin class file not found"; exit 1; }
           echo "✓ Plugin metadata valid"
