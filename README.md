@@ -1,5 +1,7 @@
 # Markdown Support Plugin for osTicket
 
+> 📖 **[Complete Documentation & FAQ](https://faq.markus-michalski.net/en/osticket/markdown-support)** - Detailed guides, troubleshooting, API integration, and technical details
+
 ## Overview
 
 Adds Markdown formatting support to osTicket 1.18.x ticket threads with a user-friendly editor interface, live preview, and automatic format detection.
@@ -156,8 +158,10 @@ See [LICENSE](./LICENSE) for details.
 
 ## 💬 Support
 
+**📖 Full Documentation:** https://faq.markus-michalski.net/en/osticket/markdown-support
+
 For questions or issues, please create an issue on GitHub:
-https://github.com/markus-michalski/osticket-plugins/issues
+https://github.com/markus-michalski/osticket-markdown-support/issues
 
 ## 🤝 Contributing
 
