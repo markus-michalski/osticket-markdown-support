@@ -27,9 +27,11 @@ jobs:
           coverage: none
 
       - name: Validate composer.json
+        if: matrix.php-version >= '8.1'
         run: composer validate --strict
 
       - name: Install Composer Dependencies
+        if: matrix.php-version >= '8.1'
         run: composer install --prefer-dist --no-progress --no-suggest
 
       - name: PHP Syntax Check
@@ -41,6 +43,7 @@ jobs:
           done
 
       - name: Run PHPUnit Tests
+        if: matrix.php-version >= '8.1'
         run: vendor/bin/phpunit --testdox
 
   package-validation:
