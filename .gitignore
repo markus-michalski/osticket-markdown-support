@@ -19,3 +19,9 @@ Thumbs.db
 
 # Test artifacts
 *.log
+
+# Claude Code project instructions
+CLAUDE.md
+
+#Screenshots
+_Screenshots/

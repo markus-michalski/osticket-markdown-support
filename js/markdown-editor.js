@@ -4,12 +4,32 @@
  * Vollständiger Markdown-Editor mit Toolbar, Live-Preview und Format-Switching
  * Kompatibel mit osTicket's Thread Entry Forms
  *
- * @version 1.0.0
+ * @version 1.0.1
  * @author Markdown-Support Plugin
  */
 
-(function($) {
+(function() {
     'use strict';
+
+    /**
+     * Wait for jQuery to be available before initializing
+     * This ensures the script works even if jQuery loads asynchronously
+     */
+    function initWhenReady() {
+        if (typeof jQuery === 'undefined') {
+            // jQuery not yet loaded - wait and retry
+            setTimeout(initWhenReady, 50);
+            return;
+        }
+
+        // jQuery is now available - proceed with initialization
+        initializeMarkdownEditor(jQuery);
+    }
+
+    /**
+     * Main initialization function (runs when jQuery is available)
+     */
+    function initializeMarkdownEditor($) {
 
     /**
      * Debug logging function
@@ -1630,4 +1650,12 @@
     // Expose MarkdownEditor class globally
     window.MarkdownEditor = MarkdownEditor;
 
-})(jQuery);
+    } // end initializeMarkdownEditor
+
+    // Start initialization (wait for jQuery if needed)
+    if (document.readyState === 'loading') {
+        document.addEventListener('DOMContentLoaded', initWhenReady);
+    } else {
+        initWhenReady();
+    }
+})();
