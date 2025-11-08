@@ -681,7 +681,7 @@ window.osTicketMarkdownConfig = {
 };
 </script>
 <link rel="stylesheet" href="<?php echo htmlspecialchars($css_url, ENT_QUOTES, 'UTF-8'); ?>">
-<script src="<?php echo htmlspecialchars($js_url, ENT_QUOTES, 'UTF-8'); ?>"></script>
+<script defer src="<?php echo htmlspecialchars($js_url, ENT_QUOTES, 'UTF-8'); ?>"></script>
 <?php
     }
 
