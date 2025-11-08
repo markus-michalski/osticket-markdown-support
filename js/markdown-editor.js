@@ -4,7 +4,7 @@
  * Vollständiger Markdown-Editor mit Toolbar, Live-Preview und Format-Switching
  * Kompatibel mit osTicket's Thread Entry Forms
  *
- * @version 1.0.1
+ * @version 1.0.0
  * @author Markdown-Support Plugin
  */
 
