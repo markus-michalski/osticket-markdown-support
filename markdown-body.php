@@ -168,7 +168,7 @@ class MarkdownThreadEntryBody extends ThreadEntryBody {
      * @return bool True if body is empty
      */
     function isEmpty() {
-        return empty(trim($this->body));
+        return empty(trim((string)$this->body));
     }
 }
 

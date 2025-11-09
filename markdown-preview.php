@@ -29,7 +29,8 @@
  * @param string $html HTML to sanitize
  * @return string Sanitized HTML
  */
-function markdownPreviewSanitizeHtml($html) {
+if (!function_exists('markdownPreviewSanitizeHtml')) {
+    function markdownPreviewSanitizeHtml($html) {
     // Remove javascript: URLs (including URL-encoded variants)
     $html = preg_replace('/(<[^>]+\s)(href|src)\s*=\s*["\']?\s*javascript:/i', '$1data-blocked-$2="', $html);
     $html = preg_replace('/(<[^>]+\s)(href|src)\s*=\s*["\']?\s*data:/i', '$1data-blocked-$2="', $html);
@@ -49,6 +50,7 @@ function markdownPreviewSanitizeHtml($html) {
     $html = preg_replace('/<script[^>]*>.*?<\/script>/is', '', $html);
 
     return $html;
+    }
 }
 
 // Catch fatal errors and convert to JSON response
