@@ -32,91 +32,50 @@
     function initializeMarkdownEditor($) {
 
     /**
-     * Debug logging function
-     * Logs to file ONLY when debug logging is enabled in plugin config.
-     * No console output - keeps browser console clean in production.
+     * Debug logging function (browser console only)
      *
      * @param {string} message - Log message
      * @param {string} level - Log level (DEBUG, INFO, WARNING, ERROR)
      * @param {object} context - Additional context data
      */
     function debugLog(message, level = 'DEBUG', context = {}) {
-        const config = window.osTicketMarkdownConfig || {};
-
-        // Only log if debug logging is enabled
-        if (!config.enableDebugLogging || !config.logHandlerUrl) {
-            return; // Exit early - no logging
+        // Development-only logging to browser console
+        // Production builds should have this disabled or removed
+        if (typeof console === 'undefined') {
+            return; // No console available
         }
 
-        // Safely serialize context - handle circular references and complex objects
-        let safeContext;
-        try {
-            // Create a safe copy of context, handling circular references
-            const seen = new WeakSet();
-            const replacer = (key, value) => {
-                // Handle circular references
-                if (typeof value === 'object' && value !== null) {
-                    if (seen.has(value)) {
-                        return '[Circular]';
-                    }
-                    seen.add(value);
-                }
+        const prefix = `[Markdown Editor ${level}]`;
 
-                // Handle jQuery objects
-                if (value instanceof jQuery) {
-                    return `[jQuery: ${value.length} elements]`;
-                }
-
-                // Handle DOM nodes
-                if (value instanceof Node) {
-                    return `[DOM: ${value.nodeName}]`;
-                }
-
-                // Handle functions
-                if (typeof value === 'function') {
-                    return '[Function]';
-                }
-
-                return value;
-            };
-
-            safeContext = JSON.parse(JSON.stringify(context, replacer));
-        } catch (err) {
-            // If serialization fails completely, use a simple string representation
-            safeContext = { error: 'Context serialization failed', type: typeof context };
-        }
-
-        // Prepare log data
-        let logData;
-        try {
-            logData = JSON.stringify({
-                message: message,
-                level: level,
-                context: safeContext
-            });
-        } catch (err) {
-            // Ultimate fallback - send only message
-            logData = JSON.stringify({
-                message: message,
-                level: level,
-                context: { error: 'Failed to serialize context' }
-            });
-        }
-
-        // Use sendBeacon for non-critical logs (fire-and-forget)
-        // Falls back to fetch if sendBeacon not available
-        if (navigator.sendBeacon) {
-            const blob = new Blob([logData], { type: 'application/json' });
-            navigator.sendBeacon(config.logHandlerUrl, blob);
+        // Use appropriate console method based on level
+        if (Object.keys(context).length > 0) {
+            switch (level) {
+                case 'ERROR':
+                    console.error(prefix, message, context);
+                    break;
+                case 'WARNING':
+                    console.warn(prefix, message, context);
+                    break;
+                case 'INFO':
+                    console.info(prefix, message, context);
+                    break;
+                default:
+                    console.log(prefix, message, context);
+            }
         } else {
-            // Fallback to fetch (async, don't wait for response)
-            fetch(config.logHandlerUrl, {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: logData
-            }).catch(() => {
-                // Silent fail - don't pollute console with AJAX errors
-            });
+            switch (level) {
+                case 'ERROR':
+                    console.error(prefix, message);
+                    break;
+                case 'WARNING':
+                    console.warn(prefix, message);
+                    break;
+                case 'INFO':
+                    console.info(prefix, message);
+                    break;
+                default:
+                    console.log(prefix, message);
+            }
         }
     }
 

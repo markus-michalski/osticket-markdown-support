@@ -50,7 +50,6 @@ class MarkdownPlugin extends Plugin {
             'default_format' => $config->get('default_format'),
             'allow_format_switch' => $config->get('allow_format_switch'),
             'show_toolbar' => $config->get('show_toolbar'),
-            'enable_debug_logging' => $config->get('enable_debug_logging'),
             'installed_version' => $config->get('installed_version')
         ];
 
@@ -283,35 +282,17 @@ class MarkdownPlugin extends Plugin {
     }
 
     /**
-     * Write debug log entry to file
+     * Debug logging function (disabled - no longer functional)
      *
      * @param string $message Log message
      * @param string $level Log level (INFO, DEBUG, ERROR, WARNING)
      * @param array $context Additional context data
+     * @deprecated Debug logging has been removed from production code
      */
     static function debugLog($message, $level = 'DEBUG', $context = []) {
-        // Check if debug logging is enabled
-        if (!self::$cached_config || !self::$cached_config['enable_debug_logging']) {
-            return; // Logging disabled - return early for performance
-        }
-
-        $log_dir = __DIR__ . '/log';
-
-        // Ensure log directory exists
-        if (!is_dir($log_dir)) {
-            @mkdir($log_dir, 0755, true);
-        }
-
-        // Create log file path with date
-        $log_file = $log_dir . '/' . date('Y-m-d') . '-markdown.log';
-
-        // Format log entry
-        $timestamp = date('Y-m-d H:i:s');
-        $context_str = !empty($context) ? ' ' . json_encode($context, JSON_UNESCAPED_UNICODE) : '';
-        $log_entry = sprintf("[%s] [%s] %s%s\n", $timestamp, $level, $message, $context_str);
-
-        // Write to log file (append mode)
-        @file_put_contents($log_file, $log_entry, FILE_APPEND | LOCK_EX);
+        // No-op: Debug logging disabled
+        // Kept for backward compatibility but does nothing
+        return;
     }
 
     /**
@@ -647,7 +628,6 @@ class MarkdownPlugin extends Plugin {
             $default_format = self::$cached_config['default_format'] ?: 'markdown';
             $allow_format_switch = self::$cached_config['allow_format_switch'];
             $show_toolbar = self::$cached_config['show_toolbar'];
-            $enable_debug_logging = self::$cached_config['enable_debug_logging'];
             $version = self::$cached_config['installed_version'];
         } else {
             // Fallback: Try to get config (might be empty instance)
@@ -655,7 +635,6 @@ class MarkdownPlugin extends Plugin {
             $default_format = $config_obj->get('default_format') ?: 'markdown';
             $allow_format_switch = $config_obj->get('allow_format_switch');
             $show_toolbar = $config_obj->get('show_toolbar');
-            $enable_debug_logging = $config_obj->get('enable_debug_logging');
             $version = $config_obj->get('installed_version');
         }
 
@@ -667,7 +646,6 @@ class MarkdownPlugin extends Plugin {
 
         // Inject config as global JavaScript variable (before editor JS loads)
         // Using PHP output instead of echo for better control
-        $log_handler_url = $plugin_url . '/log-handler.php';
         $preview_api_url = ROOT_PATH . 'api/markdown-preview.php';
         ?>
 <script>
@@ -675,8 +653,6 @@ window.osTicketMarkdownConfig = {
     defaultFormat: <?php echo json_encode($default_format); ?>,
     allowFormatSwitch: <?php echo json_encode((bool)$allow_format_switch); ?>,
     showToolbar: <?php echo json_encode((bool)$show_toolbar); ?>,
-    enableDebugLogging: <?php echo json_encode((bool)$enable_debug_logging); ?>,
-    logHandlerUrl: <?php echo json_encode($log_handler_url); ?>,
     previewApiUrl: <?php echo json_encode($preview_api_url); ?>
 };
 </script>
@@ -709,14 +685,12 @@ window.osTicketMarkdownConfig = {
             $default_format = self::$cached_config['default_format'] ?: 'markdown';
             $allow_format_switch = self::$cached_config['allow_format_switch'];
             $show_toolbar = self::$cached_config['show_toolbar'];
-            $enable_debug_logging = self::$cached_config['enable_debug_logging'];
             $version = self::$cached_config['installed_version'];
         } else {
             $config_obj = $this->getConfig();
             $default_format = $config_obj->get('default_format') ?: 'markdown';
             $allow_format_switch = $config_obj->get('allow_format_switch');
             $show_toolbar = $config_obj->get('show_toolbar');
-            $enable_debug_logging = $config_obj->get('enable_debug_logging');
             $version = $config_obj->get('installed_version');
         }
 
@@ -725,7 +699,6 @@ window.osTicketMarkdownConfig = {
         $cache_param = $version ? '?v=' . urlencode($version) : '';
         $css_url = $plugin_url . '/css/markdown-editor.css' . $cache_param;
         $js_url = $plugin_url . '/js/markdown-editor.js' . $cache_param;
-        $log_handler_url = $plugin_url . '/log-handler.php';
         $preview_api_url = ROOT_PATH . 'api/markdown-preview.php';
 
         // Build HTML as string
@@ -734,8 +707,6 @@ window.osTicketMarkdownConfig = {
         $html .= "    defaultFormat: " . json_encode($default_format) . ",\n";
         $html .= "    allowFormatSwitch: " . json_encode((bool)$allow_format_switch) . ",\n";
         $html .= "    showToolbar: " . json_encode((bool)$show_toolbar) . ",\n";
-        $html .= "    enableDebugLogging: " . json_encode((bool)$enable_debug_logging) . ",\n";
-        $html .= "    logHandlerUrl: " . json_encode($log_handler_url) . ",\n";
         $html .= "    previewApiUrl: " . json_encode($preview_api_url) . "\n";
         $html .= "};\n";
         $html .= "</script>\n";

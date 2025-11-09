@@ -92,16 +92,6 @@ class MarkdownConfig extends PluginConfig {
                 'default' => true
             )),
 
-            // Enable debug logging
-            'enable_debug_logging' => new BooleanField(array(
-                'id' => 'enable_debug_logging',
-                'label' => $__('Enable Debug Logging'),
-                'configuration' => array(
-                    'desc' => $__('Enable detailed debug logging to file. Logs are written to include/plugins/markdown-support/log/YYYY-MM-DD-markdown.log. Enable only for troubleshooting - disable in production for performance.')
-                ),
-                'default' => false
-            )),
-
             // Installed version (for auto-update tracking)
             'installed_version' => new TextboxField(array(
                 'id' => 'installed_version',
