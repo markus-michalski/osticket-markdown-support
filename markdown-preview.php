@@ -97,28 +97,28 @@ if (empty(trim($markdown))) {
     exit;
 }
 
-// Load Parsedown library
+// Load Parsedown library via Composer autoload
 // Try multiple paths since this file can be called from plugin dir or /api/
-$parsedown_paths = [
-    __DIR__ . '/vendor/Parsedown.php',  // From plugin directory
-    __DIR__ . '/../include/plugins/markdown-support/vendor/Parsedown.php',  // From /api/
+$autoload_paths = [
+    __DIR__ . '/vendor/autoload.php',  // From plugin directory
+    __DIR__ . '/../include/plugins/markdown-support/vendor/autoload.php',  // From /api/
 ];
 
-$parsedown_file = null;
-foreach ($parsedown_paths as $path) {
+$autoload_file = null;
+foreach ($autoload_paths as $path) {
     if (file_exists($path)) {
-        $parsedown_file = $path;
+        $autoload_file = $path;
         break;
     }
 }
 
-if (!$parsedown_file) {
+if (!$autoload_file) {
     http_response_code(500);
     header('Content-Type: application/json');
-    die(json_encode(['success' => false, 'error' => 'Parsedown library not found. Tried: ' . implode(', ', $parsedown_paths)]));
+    die(json_encode(['success' => false, 'error' => 'Composer autoload not found. Tried: ' . implode(', ', $autoload_paths)]));
 }
 
-require_once $parsedown_file;
+require_once $autoload_file;
 
 try {
     // Initialize Parsedown with SafeMode

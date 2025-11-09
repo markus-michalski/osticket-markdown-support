@@ -50,7 +50,9 @@ class MarkdownPlugin extends Plugin {
             'default_format' => $config->get('default_format'),
             'allow_format_switch' => $config->get('allow_format_switch'),
             'show_toolbar' => $config->get('show_toolbar'),
-            'installed_version' => $config->get('installed_version')
+            'installed_version' => $config->get('installed_version'),
+            // Deprecated: Kept for backward compatibility with old DB entries
+            'enable_debug_logging' => false
         ];
 
         // Version tracking and auto-update

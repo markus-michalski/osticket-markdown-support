@@ -14,8 +14,8 @@ css/
 js/
 i18n/
 
-# Vendor (Runtime Dependencies Only)
-vendor/Parsedown.php
+# Vendor (Runtime Dependencies)
+vendor/
 
 # Documentation (User-facing)
 README.md

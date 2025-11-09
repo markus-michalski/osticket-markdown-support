@@ -5,13 +5,13 @@ if (!class_exists('ThreadEntryBody')) {
     return;
 }
 
-// Load Parsedown library
-$parsedown_file = __DIR__ . '/vendor/Parsedown.php';
-if (!file_exists($parsedown_file)) {
-    error_log('[Markdown-Support] Warning: Parsedown.php not found');
+// Load Parsedown library via Composer autoload
+$autoload_file = __DIR__ . '/vendor/autoload.php';
+if (!file_exists($autoload_file)) {
+    error_log('[Markdown-Support] Warning: Composer autoload not found');
     return;
 }
-require_once $parsedown_file;
+require_once $autoload_file;
 
 /**
  * MarkdownThreadEntryBody - Markdown formatter for osTicket thread entries
