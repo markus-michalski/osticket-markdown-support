@@ -14,8 +14,10 @@ css/
 js/
 i18n/
 
-# Vendor (Runtime Dependencies)
-vendor/
+# Vendor (Runtime Dependencies Only - No Dev Dependencies!)
+vendor/autoload.php
+vendor/composer/
+vendor/erusev/
 
 # Documentation (User-facing)
 README.md
