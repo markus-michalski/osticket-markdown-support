@@ -16,6 +16,22 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ### Fixed
 - Nothing yet
 
+## [1.0.1] - 2025-11-09
+
+### Changed
+- added zip files to .gitignore
+- Reset to v1.0.0 after deleting v1.0.1 and v1.0.2
+- Revert to v1.0.1 after deleting v1.0.2 release
+- remove server-side debug logging functionality
+- Revert version bump to 1.0.0 for automated release process
+
+### Fixed
+- Exclude dev dependencies from release ZIP
+- Use Composer autoload instead of direct Parsedown.php require
+- allow direct access to log-handler.php via htaccess
+- Implement robust jQuery dependency loading with active polling
+- Resolve jQuery dependency loading issue with defer attribute
+
 ## [1.0.0] - 2025-11-06
 
 ### Changed
