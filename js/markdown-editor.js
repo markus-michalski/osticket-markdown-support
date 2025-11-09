@@ -218,15 +218,15 @@
             const existingRedactorStyles = this.textarea.siblings('.redactor-styles');
 
             if (existingRedactorBox.length > 0) {
-                debugLog('WARNING: [MarkdownEditor] Found existing .redactor-box, removing...');
+                debugLog('Found existing .redactor-box, removing...', 'DEBUG');
                 existingRedactorBox.remove();
             }
             if (existingRedactorIn.length > 0) {
-                debugLog('WARNING: [MarkdownEditor] Found existing redactor-in DIVs, removing...');
+                debugLog('Found existing redactor-in DIVs, removing...', 'DEBUG');
                 existingRedactorIn.remove();
             }
             if (existingRedactorStyles.length > 0) {
-                debugLog('WARNING: [MarkdownEditor] Found existing .redactor-styles DIVs, removing...');
+                debugLog('Found existing .redactor-styles DIVs, removing...', 'DEBUG');
                 existingRedactorStyles.remove();
             }
 
@@ -450,7 +450,12 @@
                     this.textarea.redactor('core.destroy');
                     debugLog('Destroyed Redactor instance', 'DEBUG');
                 } catch (e) {
-                    debugLog('WARNING: [MarkdownEditor] Redactor destroy failed (may not be initialized):', e.message);
+                    // Only warn if it's a real error (not "service not found" or "not initialized")
+                    if (e.message && !e.message.includes('not found') && !e.message.includes('not initialized')) {
+                        debugLog('WARNING: [MarkdownEditor] Redactor destroy failed: ' + e.message, 'WARNING');
+                    }
+                    // Silently ignore "service not found" errors (Redactor was never initialized)
+                    debugLog('Redactor destroy skipped (not initialized)', 'DEBUG');
                 }
             }
 
@@ -462,14 +467,14 @@
                 // Try to find .redactor-box in parent tree
                 const $parentRedactorBox = this.textarea.closest('.redactor-box');
                 if ($parentRedactorBox.length > 0) {
-                    debugLog('WARNING: [MarkdownEditor] Found .redactor-box as PARENT! Moving textarea out and removing box...');
+                    debugLog('Found .redactor-box as PARENT! Moving textarea out and removing box...', 'DEBUG');
                     // Move textarea BEFORE the .redactor-box
                     this.textarea.insertBefore($parentRedactorBox);
                     // Remove the now-empty .redactor-box
                     $parentRedactorBox.remove();
                     debugLog('✅ Moved textarea out of .redactor-box and removed box', 'DEBUG');
                 } else {
-                    debugLog('WARNING: [MarkdownEditor] ⚠️ No .redactor-box found anywhere (sibling or parent)');
+                    debugLog('No .redactor-box found (Redactor was not initialized)', 'DEBUG');
                 }
             }
 
@@ -505,7 +510,7 @@
                 // Check for sibling .redactor-box
                 const $laterRedactorBox = self.textarea.siblings('.redactor-box');
                 if ($laterRedactorBox.length > 0) {
-                    debugLog('WARNING: [MarkdownEditor] 🔧 Found .redactor-box as sibling after delay! Removing...');
+                    debugLog('Found .redactor-box as sibling after delay! Removing...', 'DEBUG');
                     $laterRedactorBox.remove();
                     self.textarea.show().css({
                         'display': 'block !important',
@@ -518,7 +523,7 @@
                 // Check for parent .redactor-box
                 const $parentRedactorBox = self.textarea.closest('.redactor-box');
                 if ($parentRedactorBox.length > 0) {
-                    debugLog('WARNING: [MarkdownEditor] 🔧 Found .redactor-box as PARENT after delay! Unwrapping...');
+                    debugLog('Found .redactor-box as PARENT after delay! Unwrapping...', 'DEBUG');
                     self.textarea.unwrap('.redactor-box');
                     self.textarea.show().css({
                         'display': 'block !important',
@@ -551,7 +556,7 @@
                     // Check if a .redactor-box was added (Redactor re-initialized)
                     mutation.addedNodes.forEach((node) => {
                         if (node.nodeType === 1 && $(node).hasClass('redactor-box')) {
-                            debugLog('WARNING: [MarkdownEditor] Detected Redactor re-initialization! Cleaning up...');
+                            debugLog('Detected Redactor re-initialization! Cleaning up...', 'DEBUG');
 
                             // Clean removal (no CSS hacks!)
                             $(node).remove();
@@ -1434,7 +1439,7 @@
                 const $redactorBox = $textarea.siblings('.redactor-box');
 
                 if ($redactorBox.length > 0) {
-                    debugLog('WARNING: [Markdown-Support] Redactor was re-initialized! Destroying immediately...');
+                    debugLog('Redactor was re-initialized! Destroying immediately...', 'DEBUG');
 
                     // Destroy Redactor
                     if (typeof $textarea.redactor === 'function') {
