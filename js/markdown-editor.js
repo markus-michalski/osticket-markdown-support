@@ -32,15 +32,28 @@
     function initializeMarkdownEditor($) {
 
     /**
+     * PRODUCTION MODE: Debug logging disabled
+     * Set to true for development/debugging, false for production
+     */
+    const DEBUG = false;
+
+    /**
      * Debug logging function (browser console only)
+     *
+     * IMPORTANT: Logging is DISABLED in production by default (DEBUG = false)
+     * Only ERROR and WARNING messages are always shown for critical issues
      *
      * @param {string} message - Log message
      * @param {string} level - Log level (DEBUG, INFO, WARNING, ERROR)
      * @param {object} context - Additional context data
      */
     function debugLog(message, level = 'DEBUG', context = {}) {
-        // Development-only logging to browser console
-        // Production builds should have this disabled or removed
+        // CRITICAL: Skip all DEBUG and INFO logs in production mode
+        if (!DEBUG && (level === 'DEBUG' || level === 'INFO')) {
+            return;
+        }
+
+        // Always show ERROR and WARNING (even in production)
         if (typeof console === 'undefined') {
             return; // No console available
         }
