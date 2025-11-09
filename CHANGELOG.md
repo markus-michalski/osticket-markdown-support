@@ -16,6 +16,16 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ### Fixed
 - Nothing yet
 
+## [1.0.2] - 2025-11-09
+
+### Changed
+- Revert to v1.0.1 after deleting v1.0.2 release
+- remove server-side debug logging functionality
+
+### Fixed
+- Use Composer autoload instead of direct Parsedown.php require
+- allow direct access to log-handler.php via htaccess
+
 ## [1.0.1] - 2025-11-08
 
 ### Changed
