@@ -2,7 +2,7 @@
 
 return array(
     'id' =>             'com.osticket:markdown-support',
-    'version' =>        '1.0.1',
+    'version' =>        '1.0.2',
     'name' =>           'Markdown Support',
     'author' =>         'Markus Michalski',
     'description' =>    'Adds Markdown formatting support for ticket threads with XSS protection. No core file modifications required.',
