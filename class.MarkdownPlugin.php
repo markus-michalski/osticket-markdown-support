@@ -539,7 +539,31 @@ class MarkdownPlugin extends Plugin {
         }
 
         // Check if this entry should be markdown
-        if (isset($_POST['format']) && $_POST['format'] === 'markdown') {
+        $format = null;
+
+        // Check POST data (form submissions)
+        if (isset($_POST['format'])) {
+            $format = $_POST['format'];
+        }
+
+        // Check JSON body (API requests)
+        // Only read JSON if we don't have format from POST and Content-Type is JSON
+        if (!$format) {
+            $content_type = $_SERVER['CONTENT_TYPE'] ?? '';
+
+            if (strpos($content_type, 'application/json') !== false) {
+                $json_input = file_get_contents('php://input');
+                if ($json_input) {
+                    $data = json_decode($json_input, true);
+                    if (isset($data['format'])) {
+                        $format = $data['format'];
+                    }
+                }
+            }
+        }
+
+        // If markdown format detected, update entry
+        if ($format === 'markdown') {
             // Get current format from entry
             $current_format = $entry->get('format');
 
