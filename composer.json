@@ -14,8 +14,15 @@
   },
   "autoload": {
     "psr-4": {
-      "MarkdownSupport\\": "./"
-    }
+      "MarkdownSupport\\": "src/"
+    },
+    "classmap": [
+      "class.MarkdownPlugin.php",
+      "config.php",
+      "MarkdownDetector.php",
+      "TicketFormatHandler.php",
+      "markdown-body.php"
+    ]
   },
   "autoload-dev": {
     "psr-4": {
