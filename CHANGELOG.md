@@ -16,6 +16,12 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ### Fixed
 - Nothing yet
 
+## [2.0.0] - 2025-12-16
+
+### Changed
+- Add src/ directory to release includes
+- Extract service classes from MarkdownPlugin
+
 ## [1.0.4] - 2025-11-15
 
 ### Changed
