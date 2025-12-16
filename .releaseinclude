@@ -9,6 +9,9 @@
 *.php
 .htaccess
 
+# Service Classes (PSR-4 autoloaded)
+src/
+
 # Assets
 css/
 js/
