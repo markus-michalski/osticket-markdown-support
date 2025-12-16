@@ -8,6 +8,7 @@ use ThreadEntryBody;
 use Signal;
 use Ticket;
 use ReflectionClass;
+use MarkdownSupport\Config\ConfigCache;
 
 /**
  * Plugin Bootstrap Integration Tests
@@ -28,6 +29,9 @@ class PluginBootstrapTest extends TestCase
         // Clear signal handlers before each test
         Signal::clearHandlers();
 
+        // Reset ConfigCache singleton
+        ConfigCache::resetInstance();
+
         // Create fresh plugin instance
         $this->plugin = new MarkdownPlugin();
     }
@@ -41,6 +45,7 @@ class PluginBootstrapTest extends TestCase
         $types_prop->setValue(null, ['text', 'html']);
 
         Signal::clearHandlers();
+        ConfigCache::resetInstance();
 
         parent::tearDown();
     }
@@ -75,9 +80,9 @@ class PluginBootstrapTest extends TestCase
     }
 
     /**
-     * Test 4: Reflection-based extension adds 'markdown' to ThreadEntryBody::$types
+     * Test 4: Bootstrap adds 'markdown' to ThreadEntryBody::$types via Reflection
      */
-    public function testExtendThreadEntryTypesAddsMarkdown(): void
+    public function testBootstrapAddsMarkdownToTypes(): void
     {
         // Verify 'markdown' is not in types initially
         $reflection = new ReflectionClass('ThreadEntryBody');
@@ -87,8 +92,8 @@ class PluginBootstrapTest extends TestCase
 
         $this->assertNotContains('markdown', $initialTypes);
 
-        // Call extendThreadEntryTypes
-        $this->plugin->extendThreadEntryTypes();
+        // Bootstrap plugin (which calls extendThreadEntryTypes internally)
+        $this->plugin->bootstrap();
 
         // Verify 'markdown' was added
         $updatedTypes = $types_prop->getValue();
@@ -96,13 +101,13 @@ class PluginBootstrapTest extends TestCase
     }
 
     /**
-     * Test 5: ExtendThreadEntryTypes is idempotent (calling twice doesn't duplicate)
+     * Test 5: Multiple bootstrap calls are idempotent (no duplicate 'markdown')
      */
-    public function testExtendThreadEntryTypesIsIdempotent(): void
+    public function testBootstrapIsIdempotent(): void
     {
-        // Call twice
-        $this->plugin->extendThreadEntryTypes();
-        $this->plugin->extendThreadEntryTypes();
+        // Call bootstrap twice
+        $this->plugin->bootstrap();
+        $this->plugin->bootstrap();
 
         // Verify 'markdown' appears only once
         $reflection = new ReflectionClass('ThreadEntryBody');
@@ -115,11 +120,11 @@ class PluginBootstrapTest extends TestCase
     }
 
     /**
-     * Test 6: RegisterMarkdownBodyClass loads the MarkdownThreadEntryBody class
+     * Test 6: Bootstrap loads MarkdownThreadEntryBody class
      */
-    public function testRegisterMarkdownBodyClassLoadsClass(): void
+    public function testBootstrapLoadsMarkdownBodyClass(): void
     {
-        $this->plugin->registerMarkdownBodyClass();
+        $this->plugin->bootstrap();
 
         $this->assertTrue(class_exists('MarkdownThreadEntryBody'));
     }
@@ -233,14 +238,17 @@ class PluginBootstrapTest extends TestCase
     }
 
     /**
-     * Test 14: InjectEditorAssets includes version parameter for cache busting
+     * Test 14: Asset injection includes version parameter for cache busting
      */
-    public function testInjectEditorAssetsIncludesVersionParameter(): void
+    public function testAssetInjectionIncludesVersionParameter(): void
     {
         $this->plugin->getConfig()->set('installed_version', '1.2.3');
+        $this->plugin->bootstrap();
+
+        $ticket = new Ticket(123, 'TEST-123');
 
         ob_start();
-        $this->plugin->injectEditorAssets();
+        Signal::send('object.view', $ticket);
         $output = ob_get_clean();
 
         $this->assertStringContainsString('?v=1.2.3', $output,
@@ -248,17 +256,21 @@ class PluginBootstrapTest extends TestCase
     }
 
     /**
-     * Test 15: InjectEditorAssets properly escapes HTML
+     * Test 15: Asset injection properly escapes HTML
      */
-    public function testInjectEditorAssetsEscapesHtml(): void
+    public function testAssetInjectionEscapesHtml(): void
     {
+        $this->plugin->bootstrap();
+
+        $ticket = new Ticket(123, 'TEST-123');
+
         ob_start();
-        $this->plugin->injectEditorAssets();
+        Signal::send('object.view', $ticket);
         $output = ob_get_clean();
 
         // Verify HTML is properly escaped (no unescaped quotes)
         $this->assertStringContainsString('<link rel="stylesheet"', $output);
-        $this->assertStringContainsString('<script src=', $output);
+        $this->assertStringContainsString('<script defer src=', $output);
 
         // Should not contain unescaped special characters that could break HTML
         $this->assertStringNotContainsString('"><script>', $output,
@@ -277,24 +289,7 @@ class PluginBootstrapTest extends TestCase
     }
 
     /**
-     * Test 17: CheckVersion compares versions correctly
-     */
-    public function testCheckVersionComparesVersions(): void
-    {
-        // Set installed version to older version
-        $this->plugin->getConfig()->set('installed_version', '0.9.0');
-
-        // CheckVersion should detect version change
-        // (This test verifies the method exists and runs without errors)
-        $this->plugin->checkVersion();
-
-        // If plugin.php exists and has newer version, installed_version should update
-        // Since we're in test environment, we just verify method doesn't crash
-        $this->assertTrue(method_exists($this->plugin, 'checkVersion'));
-    }
-
-    /**
-     * Test 18: OnThreadEntryCreated respects auto_convert_to_markdown config
+     * Test 17: OnThreadEntryCreated respects auto_convert_to_markdown config
      */
     public function testOnThreadEntryCreatedRespectsAutoConvertConfig(): void
     {
@@ -310,12 +305,11 @@ class PluginBootstrapTest extends TestCase
         Signal::send('threadentry.created', $mockEntry);
 
         // If auto-convert is disabled, handler should return early
-        // (Implementation in Phase 2, but handler should exist and not crash)
         $this->assertTrue(true, 'Handler should not crash when auto-convert is disabled');
     }
 
     /**
-     * Test 19: Bootstrap loads all dependencies
+     * Test 18: Bootstrap loads all dependencies
      */
     public function testBootstrapLoadsAllDependencies(): void
     {
@@ -337,7 +331,7 @@ class PluginBootstrapTest extends TestCase
     }
 
     /**
-     * Test 20: Multiple bootstrap calls don't cause errors
+     * Test 19: Multiple bootstrap calls don't cause errors
      */
     public function testMultipleBootstrapCallsDontCauseErrors(): void
     {
@@ -351,7 +345,7 @@ class PluginBootstrapTest extends TestCase
     }
 
     /**
-     * Test 21: Plugin lifecycle - enable, bootstrap, disable
+     * Test 20: Plugin lifecycle - enable, bootstrap, disable
      */
     public function testPluginLifecycle(): void
     {
@@ -371,7 +365,7 @@ class PluginBootstrapTest extends TestCase
     }
 
     /**
-     * Test 22: Config object is accessible
+     * Test 21: Config object is accessible
      */
     public function testConfigObjectIsAccessible(): void
     {
@@ -383,7 +377,7 @@ class PluginBootstrapTest extends TestCase
     }
 
     /**
-     * Test 23: Config default values
+     * Test 22: Config default values
      */
     public function testConfigDefaultValues(): void
     {
@@ -395,12 +389,38 @@ class PluginBootstrapTest extends TestCase
     }
 
     /**
-     * Test 24: Plugin name is correct
+     * Test 23: Plugin name is correct
      */
     public function testPluginNameIsCorrect(): void
     {
         $name = $this->plugin->getName();
 
         $this->assertSame('Markdown Support', $name);
+    }
+
+    /**
+     * Test 24: ConfigCache is populated after bootstrap
+     */
+    public function testConfigCacheIsPopulatedAfterBootstrap(): void
+    {
+        $this->plugin->bootstrap();
+
+        $cache = ConfigCache::getInstance();
+
+        $this->assertTrue($cache->isPopulated());
+        $this->assertNotNull($cache->get('default_format'));
+    }
+
+    /**
+     * Test 25: Legacy getCachedConfig returns cached config
+     */
+    public function testLegacyGetCachedConfigReturnsCache(): void
+    {
+        $this->plugin->bootstrap();
+
+        $config = MarkdownPlugin::getCachedConfig();
+
+        $this->assertIsArray($config);
+        $this->assertArrayHasKey('default_format', $config);
     }
 }
