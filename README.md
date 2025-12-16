@@ -40,7 +40,7 @@ Perfect for support teams who prefer Markdown's simplicity over HTML WYSIWYG edi
 
 #### Method 1: ZIP Download (Recommended)
 
-1. Download the latest release ZIP from [Releases](https://github.com/markus-michalski/osticket-plugins/releases)
+1. Download the latest release ZIP from [Releases](https://github.com/markus-michalski/osticket-markdown-support/releases)
 2. Extract the ZIP file
 3. Upload the `markdown-support` folder to `/include/plugins/` on your osTicket server
 
@@ -48,8 +48,7 @@ Perfect for support teams who prefer Markdown's simplicity over HTML WYSIWYG edi
 
 ```bash
 cd /path/to/osticket/include/plugins
-git clone https://github.com/markus-michalski/osticket-plugins.git
-# Plugin will be in: osticket-plugins/markdown-support/
+git clone https://github.com/markus-michalski/osticket-markdown-support.git markdown-support
 ```
 
 ### Step 2: Enable Plugin in osTicket
