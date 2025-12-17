@@ -26,6 +26,7 @@ class MarkdownConfig extends PluginConfig {
                 function($x, $y, $n) { return $n != 1 ? $y : $x; },
             );
         }
+        /** @disregard P1013 (Plugin class may not exist in test environment) */
         return Plugin::translate($plugin);
     }
 
