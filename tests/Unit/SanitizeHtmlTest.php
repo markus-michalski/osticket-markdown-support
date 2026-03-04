@@ -14,22 +14,28 @@ use PHPUnit\Framework\TestCase;
 class SanitizeHtmlTest extends TestCase
 {
     /**
-     * Load sanitizeHtml() function from markdown-preview.php
+     * Load markdownPreviewSanitizeHtml() from markdown-preview.php.
+     *
+     * The file contains executable code (die() on non-POST), so we extract
+     * only the function definition block via regex and eval it.
      */
     protected function setUp(): void
     {
-        // Extract sanitizeHtml() function and make it available for testing
         if (!function_exists('sanitizeHtml')) {
             $apiFile = __DIR__ . '/../../markdown-preview.php';
             $content = file_get_contents($apiFile);
 
-            // Extract just the sanitizeHtml() function
-            preg_match('/function sanitizeHtml\(\$html\) \{.*?\n\}/s', $content, $matches);
-
-            if (!empty($matches[0])) {
+            // Extract the if-block that defines markdownPreviewSanitizeHtml
+            // and eval it to make the function available
+            if (preg_match('/if \(!function_exists\(\'markdownPreviewSanitizeHtml\'\)\) \{.*?\n\}/s', $content, $matches)) {
                 eval($matches[0]);
+
+                // Alias for backward-compatible test assertions
+                function sanitizeHtml($html) {
+                    return markdownPreviewSanitizeHtml($html);
+                }
             } else {
-                $this->fail('Could not extract sanitizeHtml() function from markdown-preview.php');
+                $this->fail('Could not extract markdownPreviewSanitizeHtml() from markdown-preview.php');
             }
         }
     }

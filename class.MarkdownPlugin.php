@@ -39,6 +39,7 @@ use MarkdownSupport\Core\CorePatcher;
 use MarkdownSupport\Asset\AssetInjector;
 use MarkdownSupport\Asset\AssetDeployer;
 use MarkdownSupport\Signal\ThreadEntryHandler;
+use MarkdownSupport\Http\MarkdownPostProcessor;
 
 /**
  * Main plugin class
@@ -62,6 +63,9 @@ class MarkdownPlugin extends Plugin
 
     /** @var ThreadEntryHandler|null Thread entry handler instance */
     private ?ThreadEntryHandler $threadEntryHandler = null;
+
+    /** @var MarkdownPostProcessor|null POST pre-processor for email fix */
+    private ?MarkdownPostProcessor $postProcessor = null;
 
     /**
      * Only one instance of this plugin makes sense
@@ -87,6 +91,7 @@ class MarkdownPlugin extends Plugin
         }
 
         $this->extendCoreClasses();
+        $this->preprocessMarkdownPost();
         $this->registerSignalHandlers();
         $this->setupAssetInjection();
     }
@@ -103,9 +108,11 @@ class MarkdownPlugin extends Plugin
         $this->corePatcher = new CorePatcher($includeDir);
         $this->assetDeployer = new AssetDeployer(__DIR__, $osticketRoot);
         $this->assetInjector = new AssetInjector($pluginUrl, ConfigCache::getInstance());
+        $this->postProcessor = new MarkdownPostProcessor();
         $this->threadEntryHandler = new ThreadEntryHandler(
             ConfigCache::getInstance(),
-            $this->createMarkdownDetector()
+            $this->createMarkdownDetector(),
+            $this->postProcessor
         );
     }
 
@@ -178,6 +185,18 @@ class MarkdownPlugin extends Plugin
         if ($this->assetInjector->isEditorPage()) {
             ob_start([$this->assetInjector, 'injectAssetsIntoOutput']);
         }
+    }
+
+    /**
+     * Pre-process Markdown POST data for correct email rendering.
+     *
+     * Converts Markdown to HTML in $_POST so emails contain rendered HTML.
+     * A shutdown function restores the original Markdown in the database
+     * after the entire request (including email sending) is complete.
+     */
+    private function preprocessMarkdownPost(): void
+    {
+        $this->postProcessor->preProcess();
     }
 
     /**
