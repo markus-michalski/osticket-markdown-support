@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace MarkdownSupport\Signal;
 
 use MarkdownSupport\Config\ConfigCache;
+use MarkdownSupport\Http\MarkdownPostProcessor;
 
 /**
  * ThreadEntryHandler - Handles thread entry creation signals
@@ -13,6 +14,7 @@ use MarkdownSupport\Config\ConfigCache;
  * - Format detection and correction
  * - Newline restoration (osTicket strips them during save)
  * - Auto-conversion to Markdown (when enabled)
+ * - Forwarding entry IDs to MarkdownPostProcessor for DB restoration
  *
  * @package MarkdownSupport
  */
@@ -21,15 +23,21 @@ final class ThreadEntryHandler
     private ConfigCache $configCache;
     /** @var object|null Markdown detector with hasMarkdownSyntax() method */
     private ?object $detector;
+    private ?MarkdownPostProcessor $postProcessor;
 
     /**
      * @param ConfigCache $configCache
      * @param object|null $detector Object with hasMarkdownSyntax($text, $threshold) method
+     * @param MarkdownPostProcessor|null $postProcessor For Markdown DB restoration
      */
-    public function __construct(ConfigCache $configCache, ?object $detector = null)
-    {
+    public function __construct(
+        ConfigCache $configCache,
+        ?object $detector = null,
+        ?MarkdownPostProcessor $postProcessor = null
+    ) {
         $this->configCache = $configCache;
         $this->detector = $detector;
+        $this->postProcessor = $postProcessor;
     }
 
     /**
@@ -39,6 +47,9 @@ final class ThreadEntryHandler
      */
     public function onThreadEntryCreated(object $entry): void
     {
+        // Record entry ID for Markdown DB restoration (shutdown function)
+        $this->forwardEntryIdToPostProcessor($entry);
+
         // Restore newlines if they were stripped
         $this->restoreNewlines($entry);
 
@@ -52,6 +63,21 @@ final class ThreadEntryHandler
         // Auto-convert to Markdown if enabled
         if ($this->shouldAutoConvert($entry)) {
             $this->autoConvertToMarkdown($entry);
+        }
+    }
+
+    /**
+     * Forward entry ID to PostProcessor for shutdown DB restoration
+     */
+    private function forwardEntryIdToPostProcessor(object $entry): void
+    {
+        if ($this->postProcessor === null || !$this->postProcessor->wasProcessed()) {
+            return;
+        }
+
+        $entryId = $this->getEntryId($entry);
+        if ($entryId !== null) {
+            $this->postProcessor->recordEntryId($entryId);
         }
     }
 
