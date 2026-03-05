@@ -113,7 +113,7 @@
                 debounceDelay: 500,
                 toolbarButtons: [
                     'bold', 'italic', 'heading', 'link', 'code',
-                    'codeblock', 'ul', 'ol', 'quote', 'hr'
+                    'codeblock', 'ul', 'ol', 'quote', 'hr', 'image'
                 ],
                 shortcuts: true,
                 autoInit: true
@@ -178,6 +178,11 @@
             // Keyboard-Shortcuts registrieren (nur für Markdown)
             if (this.options.shortcuts && this.currentFormat === 'markdown') {
                 this.setupKeyboardShortcuts();
+            }
+
+            // Image paste/drop upload (nur für Markdown)
+            if (this.currentFormat === 'markdown') {
+                this.setupImageUpload();
             }
 
             // Initiales Rendering (nur für Markdown)
@@ -730,6 +735,11 @@
                     title: 'Horizontal Rule',
                     icon: this.getIcon('hr'),
                     action: () => this.insertHorizontalRule()
+                },
+                image: {
+                    title: 'Insert Image',
+                    icon: this.getIcon('image'),
+                    action: () => this._triggerImageFileDialog()
                 }
             };
 
@@ -1078,6 +1088,393 @@
             });
         }
 
+        // =====================================================================
+        // Image Upload (Paste & Drag-and-Drop)
+        // =====================================================================
+
+        /**
+         * Setup image paste and drag-and-drop upload handlers
+         *
+         * Uses osTicket's draft attachment API for uploads.
+         * Draft namespace/ID is read from textarea data attributes
+         * set by osTicket's Draft::getDraftAndDataAttrs().
+         */
+        setupImageUpload() {
+            // Clean up existing handlers first to prevent stacking
+            this._teardownImageUploadHandlers();
+
+            this.draftId = this.textarea.attr('data-draft-id') || null;
+            this.draftNamespace = this.textarea.attr('data-draft-namespace') || null;
+            this.draftObjectId = this.textarea.attr('data-draft-object-id') || null;
+            // Only reset counter on first setup, not on format switches
+            if (typeof this.uploadCounter === 'undefined') {
+                this.uploadCounter = 0;
+            }
+
+            // Build initial upload URL from namespace
+            this._updateUploadUrl();
+
+            if (!this.uploadUrl) {
+                debugLog('No draft namespace found - image upload disabled', 'WARNING');
+                return;
+            }
+
+            // Allowed image MIME types (no SVG to prevent XSS)
+            const ALLOWED_IMAGE_TYPES = ['image/jpeg', 'image/png', 'image/gif', 'image/webp', 'image/bmp'];
+
+            // Paste handler
+            this.textarea.on('paste.markdownImageUpload', (e) => {
+                if (this.currentFormat !== 'markdown') return;
+
+                const clipboardData = e.originalEvent.clipboardData;
+                if (!clipboardData || !clipboardData.items) return;
+
+                const imageFiles = [];
+                for (let i = 0; i < clipboardData.items.length; i++) {
+                    const item = clipboardData.items[i];
+                    if (ALLOWED_IMAGE_TYPES.includes(item.type)) {
+                        const file = item.getAsFile();
+                        if (file) imageFiles.push(file);
+                    }
+                }
+
+                if (imageFiles.length === 0) return;
+
+                // Prevent default paste behavior for images
+                e.preventDefault();
+
+                imageFiles.forEach(file => this._uploadImage(file));
+            });
+
+            // Drag-and-drop handlers on the container
+            const $dropZone = this.container;
+
+            $dropZone.on('dragover.markdownImageUpload', (e) => {
+                if (this.currentFormat !== 'markdown') return;
+                e.preventDefault();
+                e.stopPropagation();
+                $dropZone.addClass('markdown-drop-active');
+            });
+
+            $dropZone.on('dragleave.markdownImageUpload', (e) => {
+                e.preventDefault();
+                e.stopPropagation();
+                // Only remove class if we actually left the container
+                if (!$.contains($dropZone[0], e.relatedTarget)) {
+                    $dropZone.removeClass('markdown-drop-active');
+                }
+            });
+
+            $dropZone.on('drop.markdownImageUpload', (e) => {
+                if (this.currentFormat !== 'markdown') return;
+                e.preventDefault();
+                e.stopPropagation();
+                $dropZone.removeClass('markdown-drop-active');
+
+                const files = e.originalEvent.dataTransfer?.files;
+                if (!files || files.length === 0) return;
+
+                for (let i = 0; i < files.length; i++) {
+                    if (ALLOWED_IMAGE_TYPES.includes(files[i].type)) {
+                        this._uploadImage(files[i]);
+                    }
+                }
+            });
+
+            debugLog('Image upload handlers registered', 'DEBUG');
+        }
+
+        /**
+         * Remove image upload event handlers
+         */
+        _teardownImageUploadHandlers() {
+            this.textarea.off('paste.markdownImageUpload');
+            if (this.container) {
+                this.container.off('dragover.markdownImageUpload dragleave.markdownImageUpload drop.markdownImageUpload');
+            }
+        }
+
+        /**
+         * Build or update the upload URL based on current draft state
+         */
+        _updateUploadUrl() {
+            let draftPath;
+            if (this.draftId) {
+                draftPath = this.draftId + '/attach';
+            } else if (this.draftNamespace) {
+                let ns = this.draftNamespace;
+                if (this.draftObjectId) {
+                    ns += '.' + this.draftObjectId;
+                }
+                draftPath = ns + '/attach';
+            } else {
+                this.uploadUrl = null;
+                return;
+            }
+
+            this.uploadUrl = 'ajax.php/draft/' + draftPath;
+        }
+
+        /**
+         * Upload a single image file to osTicket's draft attachment API
+         *
+         * @param {File} file - The image file to upload
+         */
+        _uploadImage(file) {
+            this.uploadCounter++;
+            const uploadId = this.uploadCounter;
+            const placeholder = `![Uploading image-${uploadId}...]()`;
+
+            // Insert placeholder at cursor position
+            this._insertTextAtCursor(placeholder);
+
+            // Show upload indicator
+            this._showUploadProgress(uploadId);
+
+            // Build FormData
+            // Use 'file[]' (array notation) because osTicket's AttachmentFile::format()
+            // expects $_FILES in multi-upload format (arrays for name, tmp_name, etc.)
+            const formData = new FormData();
+            formData.append('file[]', file, file.name || 'pasted-image.png');
+
+            // Add CSRF token (required by osTicket)
+            const csrfToken = $('meta[name=csrf_token]').attr('content')
+                || $('input[name="__CSRFToken__"]').val();
+            if (!csrfToken) {
+                debugLog('CSRF token not found - upload aborted', 'ERROR');
+                this._replacePlaceholder(placeholder, '');
+                this._hideUploadProgress(uploadId);
+                this._showUploadError('Upload failed: Security token not found. Please reload the page.');
+                return;
+            }
+            formData.append('__CSRFToken__', csrfToken);
+
+            // Perform upload
+            // global: false prevents osTicket's global $(document).ajaxError handler
+            // from showing "Unable to save draft" dialog on upload errors
+            $.ajax({
+                url: this.uploadUrl,
+                type: 'POST',
+                data: formData,
+                processData: false,
+                contentType: false,
+                dataType: 'json',
+                global: false,
+                success: (response) => {
+                    this._handleUploadSuccess(response, placeholder, uploadId);
+                },
+                error: (xhr) => {
+                    this._handleUploadError(xhr, placeholder, uploadId);
+                }
+            });
+        }
+
+        /**
+         * Handle successful image upload
+         *
+         * @param {Object} response - JSON response from osTicket API
+         * @param {string} placeholder - The placeholder text to replace
+         * @param {number} uploadId - Upload identifier
+         */
+        _handleUploadSuccess(response, placeholder, uploadId) {
+            this._hideUploadProgress(uploadId);
+
+            // Response format: { "filename.png": { content_id, id, draft_id, url } }
+            const keys = Object.keys(response);
+            if (keys.length === 0) {
+                this._replacePlaceholder(placeholder, '![Upload failed]()');
+                return;
+            }
+
+            const fileData = response[keys[0]];
+            const fileName = keys[0];
+
+            // Update draft_id for subsequent uploads
+            if (fileData.draft_id && !this.draftId) {
+                this.draftId = fileData.draft_id;
+                this._updateUploadUrl();
+                debugLog('Draft ID set to: ' + this.draftId, 'DEBUG');
+            }
+
+            // Build markdown image syntax with the file URL
+            // Sanitize URL: only allow http(s) and paths containing file.php
+            const rawUrl = fileData.url || 'file.php?key=' + String(fileData.id) + '&disposition=inline';
+            const imageUrl = /^https?:\/\//.test(rawUrl) || /file\.php\?/.test(rawUrl) ? rawUrl : '#invalid-url';
+            // Sanitize alt text: strip characters that break Markdown syntax
+            const altText = fileName.replace(/\.[^.]+$/, '').replace(/[\[\]()]/g, '');
+            const markdown = `![${altText}](${imageUrl})`;
+
+            this._replacePlaceholder(placeholder, markdown);
+
+            debugLog('Image uploaded successfully: ' + fileName, 'INFO');
+        }
+
+        /**
+         * Handle failed image upload
+         *
+         * @param {Object} xhr - jQuery XHR object
+         * @param {string} placeholder - The placeholder text to replace
+         * @param {number} uploadId - Upload identifier
+         */
+        _handleUploadError(xhr, placeholder, uploadId) {
+            this._hideUploadProgress(uploadId);
+
+            let errorMsg = 'Upload failed';
+            try {
+                const resp = JSON.parse(xhr.responseText);
+                if (resp.error) errorMsg = String(resp.error).substring(0, 200);
+            } catch (e) {
+                if (xhr.responseText) {
+                    // Strip HTML tags and limit length
+                    errorMsg = xhr.responseText.replace(/<[^>]*>/g, '').substring(0, 200);
+                }
+            }
+
+            // Remove placeholder and show error
+            this._replacePlaceholder(placeholder, '');
+
+            // Show user-visible error notification
+            this._showUploadError(errorMsg);
+
+            debugLog('Image upload failed: ' + errorMsg, 'ERROR');
+        }
+
+        /**
+         * Insert text at current cursor position in textarea
+         *
+         * @param {string} text - Text to insert
+         */
+        _insertTextAtCursor(text) {
+            const textarea = this.textarea[0];
+            const start = textarea.selectionStart;
+            const end = textarea.selectionEnd;
+            const value = textarea.value;
+
+            // Add newlines if not at line start
+            let prefix = '';
+            if (start > 0 && value[start - 1] !== '\n') {
+                prefix = '\n';
+            }
+            let suffix = '';
+            if (end < value.length && value[end] !== '\n') {
+                suffix = '\n';
+            }
+
+            const insertText = prefix + text + suffix;
+            textarea.value = value.substring(0, start) + insertText + value.substring(end);
+
+            // Position cursor after inserted text
+            const newPos = start + insertText.length;
+            textarea.setSelectionRange(newPos, newPos);
+
+            this.textarea.trigger('input');
+        }
+
+        /**
+         * Replace placeholder text in textarea
+         *
+         * @param {string} placeholder - Text to find and replace
+         * @param {string} replacement - Replacement text
+         */
+        _replacePlaceholder(placeholder, replacement) {
+            const textarea = this.textarea[0];
+            const value = textarea.value;
+            const index = value.indexOf(placeholder);
+
+            if (index === -1) {
+                debugLog('Placeholder not found in textarea', 'WARNING');
+                return;
+            }
+
+            textarea.value = value.substring(0, index) + replacement + value.substring(index + placeholder.length);
+
+            // Position cursor after replacement
+            const newPos = index + replacement.length;
+            textarea.setSelectionRange(newPos, newPos);
+
+            this.textarea.trigger('input');
+        }
+
+        /**
+         * Show upload progress indicator
+         *
+         * @param {number} uploadId - Upload identifier
+         */
+        _showUploadProgress(uploadId) {
+            if (!this.container) return;
+
+            const $indicator = $('<div>', {
+                class: 'markdown-upload-indicator',
+                'data-upload-id': uploadId,
+                html: '<span class="markdown-upload-spinner"></span> <span class="markdown-upload-text">Uploading image...</span>'
+            });
+            this.container.append($indicator);
+        }
+
+        /**
+         * Hide upload progress indicator
+         *
+         * @param {number} uploadId - Upload identifier
+         */
+        _hideUploadProgress(uploadId) {
+            if (!this.container) return;
+            this.container.find(`.markdown-upload-indicator[data-upload-id="${uploadId}"]`).remove();
+        }
+
+        /**
+         * Show upload error notification
+         *
+         * @param {string} message - Error message to display
+         */
+        _showUploadError(message) {
+            if (!this.container) return;
+
+            const $error = $('<div>', {
+                class: 'markdown-upload-error',
+                text: message
+            });
+
+            this.container.append($error);
+
+            // Auto-remove after 5 seconds
+            setTimeout(() => $error.fadeOut(300, () => $error.remove()), 5000);
+        }
+
+        /**
+         * Open file dialog for image upload via toolbar button
+         */
+        _triggerImageFileDialog() {
+            if (!this.uploadUrl) {
+                this._showUploadError('Image upload not available — no draft context found.');
+                return;
+            }
+
+            const ALLOWED_TYPES = 'image/jpeg,image/png,image/gif,image/webp,image/bmp';
+            const $input = $('<input>', {
+                type: 'file',
+                accept: ALLOWED_TYPES,
+                multiple: true,
+                css: { display: 'none' }
+            });
+
+            $input.on('change', (e) => {
+                const files = e.target.files;
+                if (!files || files.length === 0) return;
+
+                for (let i = 0; i < files.length; i++) {
+                    this._uploadImage(files[i]);
+                }
+                $input.remove();
+            });
+
+            // Append to body, trigger click, clean up on cancel
+            $('body').append($input);
+            $input[0].click();
+
+            // Clean up if dialog is cancelled (no change event fires)
+            setTimeout(() => { if ($input.parent().length) $input.remove(); }, 60000);
+        }
+
         /**
          * Wraps selected text with prefix and suffix
          */
@@ -1316,6 +1713,9 @@
                     debugLog('Created Markdown preview', 'DEBUG');
                 }
 
+                // Re-register image upload handlers
+                this.setupImageUpload();
+
                 // Show all Markdown-specific buttons
                 if (this.toolbar) {
                     this.toolbar.find('.markdown-toolbar-btn').show();
@@ -1349,6 +1749,7 @@
                 'list-ol': '<svg viewBox="0 0 24 24" width="16" height="16"><path fill="currentColor" d="M2 17h2v.5H3v1h1v.5H2v1h3v-4H2v1zm1-9h1V4H2v1h1v3zm-1 3h1.8L2 13.1v.9h3v-1H3.2L5 10.9V10H2v1zm5-6v2h14V5H7zm0 14h14v-2H7v2zm0-6h14v-2H7v2z"/></svg>',
                 quote: '<svg viewBox="0 0 24 24" width="16" height="16"><path fill="currentColor" d="M6 17h3l2-4V7H5v6h3zm8 0h3l2-4V7h-6v6h3z"/></svg>',
                 hr: '<svg viewBox="0 0 24 24" width="16" height="16"><path fill="currentColor" d="M19 13H5v-2h14v2z"/></svg>',
+                image: '<svg viewBox="0 0 24 24" width="16" height="16"><path fill="currentColor" d="M21 19V5c0-1.1-.9-2-2-2H5c-1.1 0-2 .9-2 2v14c0 1.1.9 2 2 2h14c1.1 0 2-.9 2-2zM8.5 13.5l2.5 3.01L14.5 12l4.5 6H5l3.5-4.5z"/></svg>',
                 eye: '<svg viewBox="0 0 24 24" width="16" height="16"><path fill="currentColor" d="M12 4.5C7 4.5 2.73 7.61 1 12c1.73 4.39 6 7.5 11 7.5s9.27-3.11 11-7.5c-1.73-4.39-6-7.5-11-7.5zM12 17c-2.76 0-5-2.24-5-5s2.24-5 5-5 5 2.24 5 5-2.24 5-5 5zm0-8c-1.66 0-3 1.34-3 3s1.34 3 3 3 3-1.34 3-3-1.34-3-3-3z"/></svg>'
             };
 
@@ -1372,7 +1773,10 @@
             this.textarea.unwrap(); // Remove container
             this.textarea.removeClass('markdown-textarea markdown-active');
 
-            this.textarea.off('input keydown');
+            this.textarea.off('input keydown paste.markdownImageUpload');
+            if (this.container) {
+                this.container.off('dragover.markdownImageUpload dragleave.markdownImageUpload drop.markdownImageUpload');
+            }
 
             debugLog('Editor destroyed', 'DEBUG');
         }
