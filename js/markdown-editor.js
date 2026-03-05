@@ -1292,9 +1292,9 @@
             }
 
             // Build markdown image syntax with the file URL
-            // Sanitize URL: only allow http(s) and relative file.php paths
-            const rawUrl = fileData.url || 'file.php?key=' + String(fileData.id) + '&deposition=inline';
-            const imageUrl = /^(https?:\/\/|file\.php\?)/.test(rawUrl) ? rawUrl : '#invalid-url';
+            // Sanitize URL: only allow http(s) and paths containing file.php
+            const rawUrl = fileData.url || 'file.php?key=' + String(fileData.id) + '&disposition=inline';
+            const imageUrl = /^https?:\/\//.test(rawUrl) || /file\.php\?/.test(rawUrl) ? rawUrl : '#invalid-url';
             // Sanitize alt text: strip characters that break Markdown syntax
             const altText = fileName.replace(/\.[^.]+$/, '').replace(/[\[\]()]/g, '');
             const markdown = `![${altText}](${imageUrl})`;
