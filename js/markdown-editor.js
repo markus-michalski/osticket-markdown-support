@@ -1227,8 +1227,10 @@
             this._showUploadProgress(uploadId);
 
             // Build FormData
+            // Use 'file[]' (array notation) because osTicket's AttachmentFile::format()
+            // expects $_FILES in multi-upload format (arrays for name, tmp_name, etc.)
             const formData = new FormData();
-            formData.append('file', file, file.name || 'pasted-image.png');
+            formData.append('file[]', file, file.name || 'pasted-image.png');
 
             // Add CSRF token (required by osTicket)
             const csrfToken = $('meta[name=csrf_token]').attr('content')
