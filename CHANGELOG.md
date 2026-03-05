@@ -13,8 +13,33 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ### Changed
 - Nothing yet
 
+### Deprecated
+- Nothing yet
+
+### Removed
+- Nothing yet
+
 ### Fixed
 - Nothing yet
+
+### Security
+- Nothing yet
+
+## [2.1.0] - 2026-03-05
+
+### Added
+- add canned response support for Markdown editor (#7)
+- add image upload button to Markdown toolbar
+- add image paste and drag-and-drop upload support for Markdown editor
+
+### Changed
+- corrected version in plugin.php
+
+### Fixed
+- convert Markdown to HTML for outbound emails while preserving Markdown in DB (#5)
+- accept root-relative file.php URLs from upload response
+- use file[] array notation for osTicket upload compatibility
+- prevent osTicket "Unable to save draft" dialog on image upload errors
 
 ## [2.0.2] - 2025-12-17
 
@@ -81,3 +106,5 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Remove direct Parsedown require from test file
 - Downgrade to PHPUnit 9.x for PHP 7.4+ compatibility
 - Only run Composer/PHPUnit tests on PHP 8.1+
+
+[2.1.0]: https://github.com/markus-michalski/osticket-markdown-support/releases/tag/v2.1.0
