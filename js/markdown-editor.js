@@ -113,7 +113,7 @@
                 debounceDelay: 500,
                 toolbarButtons: [
                     'bold', 'italic', 'heading', 'link', 'code',
-                    'codeblock', 'ul', 'ol', 'quote', 'hr'
+                    'codeblock', 'ul', 'ol', 'quote', 'hr', 'image'
                 ],
                 shortcuts: true,
                 autoInit: true
@@ -735,6 +735,11 @@
                     title: 'Horizontal Rule',
                     icon: this.getIcon('hr'),
                     action: () => this.insertHorizontalRule()
+                },
+                image: {
+                    title: 'Insert Image',
+                    icon: this.getIcon('image'),
+                    action: () => this._triggerImageFileDialog()
                 }
             };
 
@@ -1436,6 +1441,41 @@
         }
 
         /**
+         * Open file dialog for image upload via toolbar button
+         */
+        _triggerImageFileDialog() {
+            if (!this.uploadUrl) {
+                this._showUploadError('Image upload not available — no draft context found.');
+                return;
+            }
+
+            const ALLOWED_TYPES = 'image/jpeg,image/png,image/gif,image/webp,image/bmp';
+            const $input = $('<input>', {
+                type: 'file',
+                accept: ALLOWED_TYPES,
+                multiple: true,
+                css: { display: 'none' }
+            });
+
+            $input.on('change', (e) => {
+                const files = e.target.files;
+                if (!files || files.length === 0) return;
+
+                for (let i = 0; i < files.length; i++) {
+                    this._uploadImage(files[i]);
+                }
+                $input.remove();
+            });
+
+            // Append to body, trigger click, clean up on cancel
+            $('body').append($input);
+            $input[0].click();
+
+            // Clean up if dialog is cancelled (no change event fires)
+            setTimeout(() => { if ($input.parent().length) $input.remove(); }, 60000);
+        }
+
+        /**
          * Wraps selected text with prefix and suffix
          */
         wrapSelection(prefix, suffix, placeholder = '') {
@@ -1709,6 +1749,7 @@
                 'list-ol': '<svg viewBox="0 0 24 24" width="16" height="16"><path fill="currentColor" d="M2 17h2v.5H3v1h1v.5H2v1h3v-4H2v1zm1-9h1V4H2v1h1v3zm-1 3h1.8L2 13.1v.9h3v-1H3.2L5 10.9V10H2v1zm5-6v2h14V5H7zm0 14h14v-2H7v2zm0-6h14v-2H7v2z"/></svg>',
                 quote: '<svg viewBox="0 0 24 24" width="16" height="16"><path fill="currentColor" d="M6 17h3l2-4V7H5v6h3zm8 0h3l2-4V7h-6v6h3z"/></svg>',
                 hr: '<svg viewBox="0 0 24 24" width="16" height="16"><path fill="currentColor" d="M19 13H5v-2h14v2z"/></svg>',
+                image: '<svg viewBox="0 0 24 24" width="16" height="16"><path fill="currentColor" d="M21 19V5c0-1.1-.9-2-2-2H5c-1.1 0-2 .9-2 2v14c0 1.1.9 2 2 2h14c1.1 0 2-.9 2-2zM8.5 13.5l2.5 3.01L14.5 12l4.5 6H5l3.5-4.5z"/></svg>',
                 eye: '<svg viewBox="0 0 24 24" width="16" height="16"><path fill="currentColor" d="M12 4.5C7 4.5 2.73 7.61 1 12c1.73 4.39 6 7.5 11 7.5s9.27-3.11 11-7.5c-1.73-4.39-6-7.5-11-7.5zM12 17c-2.76 0-5-2.24-5-5s2.24-5 5-5 5 2.24 5 5-2.24 5-5 5zm0-8c-1.66 0-3 1.34-3 3s1.34 3 3 3 3-1.34 3-3-1.34-3-3-3z"/></svg>'
             };
 
