@@ -185,6 +185,9 @@
                 this.setupImageUpload();
             }
 
+            // Canned Response interception for Markdown mode
+            this.setupCannedResponseHandler();
+
             // Initiales Rendering (nur für Markdown)
             if (this.currentFormat === 'markdown' && this.textarea.val().trim()) {
                 this.renderPreview();
@@ -1630,6 +1633,236 @@
             textarea.setSelectionRange(newPos, newPos);
 
             this.textarea.trigger('input');
+        }
+
+        // =================================================================
+        // Canned Response Markdown Integration
+        // =================================================================
+
+        /**
+         * Convert simple HTML to Markdown
+         *
+         * Handles common formatting from osTicket canned responses:
+         * bold, italic, links, images, lists, headings, blockquotes, hr, br, p
+         *
+         * @param {string} html - HTML string to convert
+         * @returns {string} Markdown string
+         */
+        htmlToMarkdown(html) {
+            if (!html || typeof html !== 'string') return '';
+
+            let md = html;
+
+            // Normalize line endings
+            md = md.replace(/\r\n/g, '\n');
+
+            // Remove HTML comments
+            md = md.replace(/<!--[\s\S]*?-->/g, '');
+
+            // Block-level elements first (order matters)
+
+            // Headings: <h1>-<h6>
+            for (let i = 1; i <= 6; i++) {
+                const hashes = '#'.repeat(i);
+                const re = new RegExp(`<h${i}[^>]*>(.*?)<\\/h${i}>`, 'gi');
+                md = md.replace(re, `\n\n${hashes} $1\n\n`);
+            }
+
+            // Blockquote
+            md = md.replace(/<blockquote[^>]*>([\s\S]*?)<\/blockquote>/gi, (match, content) => {
+                const lines = this._stripTags(content).trim().split('\n');
+                return '\n\n' + lines.map(l => '> ' + l.trim()).join('\n') + '\n\n';
+            });
+
+            // Horizontal rule
+            md = md.replace(/<hr\s*\/?>/gi, '\n\n---\n\n');
+
+            // Lists: <ul>/<ol> with <li>
+            md = md.replace(/<ol[^>]*>([\s\S]*?)<\/ol>/gi, (match, content) => {
+                let idx = 0;
+                const items = content.replace(/<li[^>]*>([\s\S]*?)<\/li>/gi, (m, li) => {
+                    idx++;
+                    return idx + '. ' + this._stripTags(li).trim() + '\n';
+                });
+                return '\n\n' + items.trim() + '\n\n';
+            });
+
+            md = md.replace(/<ul[^>]*>([\s\S]*?)<\/ul>/gi, (match, content) => {
+                const items = content.replace(/<li[^>]*>([\s\S]*?)<\/li>/gi, (m, li) => {
+                    return '- ' + this._stripTags(li).trim() + '\n';
+                });
+                return '\n\n' + items.trim() + '\n\n';
+            });
+
+            // Paragraphs
+            md = md.replace(/<p[^>]*>([\s\S]*?)<\/p>/gi, '\n\n$1\n\n');
+
+            // Line breaks
+            md = md.replace(/<br\s*\/?>/gi, '\n');
+
+            // Inline elements
+
+            // Images (before links to avoid nesting issues)
+            md = md.replace(/<img[^>]*src=["']([^"']+)["'][^>]*alt=["']([^"']*?)["'][^>]*\/?>/gi, '![$2]($1)');
+            md = md.replace(/<img[^>]*alt=["']([^"']*?)["'][^>]*src=["']([^"']+)["'][^>]*\/?>/gi, '![$1]($2)');
+            md = md.replace(/<img[^>]*src=["']([^"']+)["'][^>]*\/?>/gi, '![]($1)');
+
+            // Links
+            md = md.replace(/<a[^>]*href=["']([^"']+)["'][^>]*>(.*?)<\/a>/gi, '[$2]($1)');
+
+            // Bold: <strong>, <b>
+            md = md.replace(/<(strong|b)[^>]*>(.*?)<\/\1>/gi, '**$2**');
+
+            // Italic: <em>, <i>
+            md = md.replace(/<(em|i)[^>]*>(.*?)<\/\1>/gi, '*$2*');
+
+            // Code: <code>
+            md = md.replace(/<code[^>]*>(.*?)<\/code>/gi, '`$1`');
+
+            // Pre/code blocks
+            md = md.replace(/<pre[^>]*><code[^>]*>([\s\S]*?)<\/code><\/pre>/gi, '\n\n```\n$1\n```\n\n');
+            md = md.replace(/<pre[^>]*>([\s\S]*?)<\/pre>/gi, '\n\n```\n$1\n```\n\n');
+
+            // Strip remaining HTML tags
+            md = this._stripTags(md);
+
+            // Decode HTML entities
+            md = this._decodeEntities(md);
+
+            // Clean up whitespace: collapse 3+ newlines to 2
+            md = md.replace(/\n{3,}/g, '\n\n');
+
+            return md.trim();
+        }
+
+        /**
+         * Strip HTML tags from string
+         * @param {string} html
+         * @returns {string}
+         */
+        _stripTags(html) {
+            const tmp = document.createElement('div');
+            tmp.innerHTML = html;
+            return tmp.textContent || tmp.innerText || '';
+        }
+
+        /**
+         * Decode HTML entities
+         * @param {string} text
+         * @returns {string}
+         */
+        _decodeEntities(text) {
+            const tmp = document.createElement('textarea');
+            tmp.innerHTML = text;
+            return tmp.value;
+        }
+
+        /**
+         * Setup handler to intercept osTicket's canned response insertion
+         *
+         * osTicket's scp.js binds a change handler on #cannedResp that fetches
+         * the HTML canned response via AJAX and inserts it into Redactor.
+         * When Markdown mode is active, we intercept this and handle it ourselves
+         * by converting HTML to Markdown before insertion.
+         *
+         * Strategy: We remove osTicket's handler and replace it with our own
+         * that handles both Markdown and HTML modes. We use a delayed setup
+         * to ensure scp.js has already bound its handler before we replace it.
+         */
+        setupCannedResponseHandler() {
+            const self = this;
+            const $form = this.textarea.closest('form');
+
+            // Delay to ensure scp.js has already bound its handlers
+            setTimeout(() => {
+                const $cannedSelect = $form.find('#cannedResp');
+
+                if ($cannedSelect.length === 0) {
+                    return;
+                }
+
+                // Only bind once per select element
+                if ($cannedSelect.data('markdownCannedBound')) {
+                    return;
+                }
+                $cannedSelect.data('markdownCannedBound', true);
+
+                // Remove osTicket's original change handler
+                $cannedSelect.off('change');
+
+                // Bind our replacement handler
+                $cannedSelect.on('change', function() {
+                    const cid = $(this).val();
+                    if (!cid || cid === '0') return;
+
+                    const tid = $(':input[name=id]', $form).val();
+
+                    // Reset dropdown
+                    $(this).find('option:first').attr('selected', 'selected').parent('select');
+
+                    // Build URL (same logic as osTicket's scp.js)
+                    let url = 'ajax.php/kb/canned-response/' + cid + '.json';
+                    if (tid) {
+                        url = 'ajax.php/tickets/' + tid + '/canned-resp/' + cid + '.json';
+                    }
+
+                    $.ajax({
+                        type: 'GET',
+                        url: url,
+                        dataType: 'json',
+                        cache: false,
+                        success: function(canned) {
+                            if (canned.response) {
+                                self._insertCannedResponse(canned.response);
+                            }
+
+                            // Handle attachments (same as osTicket default)
+                            const ca = $('.attachments', $form);
+                            if (canned.files && ca.length) {
+                                const fdb = ca.find('.dropzone').data('dropbox');
+                                if (fdb) {
+                                    $.each(canned.files, function(i, j) {
+                                        fdb.addNode(j);
+                                    });
+                                }
+                            }
+                        }
+                    });
+                });
+
+                debugLog('Canned response handler initialized', 'DEBUG');
+            }, 500);
+        }
+
+        /**
+         * Insert canned response content into the active editor
+         *
+         * If Markdown mode is active: convert HTML to Markdown and insert into textarea
+         * If HTML mode is active: insert HTML via Redactor
+         *
+         * @param {string} htmlContent - HTML content from canned response API
+         */
+        _insertCannedResponse(htmlContent) {
+            if (this.currentFormat === 'markdown' || this.currentFormat === 'text') {
+                // Convert HTML to Markdown and insert into textarea
+                const markdown = this.htmlToMarkdown(htmlContent);
+                debugLog('Inserting canned response as Markdown', 'DEBUG', {
+                    htmlLength: htmlContent.length,
+                    mdLength: markdown.length
+                });
+                this._insertTextAtCursor(markdown);
+            } else {
+                // HTML mode: use Redactor if available
+                const redactor = $R('#response.richtext');
+                if (redactor) {
+                    redactor.api('selection.restore');
+                    redactor.insertion.insertHtml(htmlContent);
+                } else {
+                    // Fallback: append to textarea
+                    const box = this.textarea;
+                    box.val(box.val() + htmlContent);
+                }
+            }
         }
 
         /**
