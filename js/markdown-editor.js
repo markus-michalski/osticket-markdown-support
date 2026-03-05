@@ -1243,6 +1243,8 @@
             formData.append('__CSRFToken__', csrfToken);
 
             // Perform upload
+            // global: false prevents osTicket's global $(document).ajaxError handler
+            // from showing "Unable to save draft" dialog on upload errors
             $.ajax({
                 url: this.uploadUrl,
                 type: 'POST',
@@ -1250,6 +1252,7 @@
                 processData: false,
                 contentType: false,
                 dataType: 'json',
+                global: false,
                 success: (response) => {
                     this._handleUploadSuccess(response, placeholder, uploadId);
                 },
