@@ -14,7 +14,7 @@ src/
 
 # Assets
 css/
-js/
+js/markdown-editor.js
 i18n/
 
 # Vendor (Runtime Dependencies Only - No Dev Dependencies!)
