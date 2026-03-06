@@ -26,5 +26,11 @@ CLAUDE.md
 #Screenshots
 _Screenshots/
 
-#Release
+# Node
+node_modules/
+
+# esbuild
+js/markdown-editor.js.map
+
+# Release
 *.zip

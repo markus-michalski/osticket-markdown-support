@@ -1,0 +1,13 @@
+{
+  "private": true,
+  "name": "osticket-markdown-support",
+  "description": "Markdown editor integration for osTicket",
+  "scripts": {
+    "build": "esbuild js/src/index.js --bundle --format=iife --target=es2018 --outfile=js/markdown-editor.js --minify",
+    "build:dev": "esbuild js/src/index.js --bundle --format=iife --target=es2018 --outfile=js/markdown-editor.js --sourcemap=linked",
+    "watch": "esbuild js/src/index.js --bundle --format=iife --target=es2018 --outfile=js/markdown-editor.js --sourcemap=linked --watch"
+  },
+  "devDependencies": {
+    "esbuild": "^0.25.0"
+  }
+}
