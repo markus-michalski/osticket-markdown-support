@@ -25,6 +25,15 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ### Security
 - Nothing yet
 
+## [2.2.0] - 2026-03-06
+
+### Added
+- add compact mode for secondary textareas (#8)
+
+### Changed
+- split markdown-editor.js monolith into ES modules
+- add esbuild infrastructure for module bundling
+
 ## [2.1.0] - 2026-03-05
 
 ### Added
@@ -108,3 +117,4 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Only run Composer/PHPUnit tests on PHP 8.1+
 
 [2.1.0]: https://github.com/markus-michalski/osticket-markdown-support/releases/tag/v2.1.0
+[2.2.0]: https://github.com/markus-michalski/osticket-markdown-support/releases/tag/v2.2.0
