@@ -116,7 +116,8 @@
                     'codeblock', 'ul', 'ol', 'quote', 'hr', 'image'
                 ],
                 shortcuts: true,
-                autoInit: true
+                autoInit: true,
+                compact: false // No preview, minimal toolbar - for secondary textareas
             }, options);
 
             this.container = null;
@@ -168,9 +169,8 @@
                 this.createToolbar();
             }
 
-            // Preview-Pane erstellen (nur für Markdown)
-            // Bei HTML brauchen wir keine Preview
-            if (this.currentFormat === 'markdown') {
+            // Preview-Pane erstellen (nur für Markdown, nicht im Compact-Mode)
+            if (this.currentFormat === 'markdown' && !this.options.compact) {
                 this.createPreview();
                 this.setupLivePreview();
             }
@@ -180,8 +180,8 @@
                 this.setupKeyboardShortcuts();
             }
 
-            // Image paste/drop upload (nur für Markdown)
-            if (this.currentFormat === 'markdown') {
+            // Image paste/drop upload (nur für Markdown, nicht im Compact-Mode)
+            if (this.currentFormat === 'markdown' && !this.options.compact) {
                 this.setupImageUpload();
             }
 
@@ -597,8 +597,11 @@
          * Erstellt den Container-Wrapper um die Textarea
          */
         createContainer() {
+            const containerClass = 'markdown-editor-container'
+                + (this.options.compact ? ' markdown-compact' : '');
+
             this.container = $('<div>', {
-                class: 'markdown-editor-container',
+                class: containerClass,
                 'data-format': this.currentFormat
             });
 
@@ -665,8 +668,10 @@
                 'aria-label': 'Markdown Formatting Tools'
             });
 
-            // Toolbar-Buttons erstellen
+            // Toolbar-Buttons erstellen (compact mode: skip image button)
+            const skipInCompact = ['image'];
             this.options.toolbarButtons.forEach(button => {
+                if (this.options.compact && skipInCompact.includes(button)) return;
                 const btn = this.createToolbarButton(button);
                 if (btn) {
                     this.toolbar.append(btn);
@@ -676,9 +681,11 @@
             // Note: Format-Switcher is now standalone (created in init())
             // and not part of the toolbar anymore
 
-            // Preview-Toggle Button (nur mobile)
-            const previewToggle = this.createPreviewToggle();
-            this.toolbar.append(previewToggle);
+            // Preview-Toggle Button (nur mobile, skip in compact mode)
+            if (!this.options.compact) {
+                const previewToggle = this.createPreviewToggle();
+                this.toolbar.append(previewToggle);
+            }
 
             // Toolbar vor der Textarea einfügen
             this.container.prepend(this.toolbar);
@@ -942,6 +949,9 @@
          * Rendert die Markdown-Preview
          */
         renderPreview() {
+            // Skip rendering if no preview pane (compact mode)
+            if (!this.previewPane) return;
+
             const markdown = this.textarea.val();
 
             if (!markdown.trim()) {
@@ -1939,15 +1949,17 @@
                     debugLog('Created Markdown toolbar', 'DEBUG');
                 }
 
-                // Create preview if not exists
-                if (!this.previewPane) {
+                // Create preview if not exists (skip in compact mode)
+                if (!this.previewPane && !this.options.compact) {
                     this.createPreview();
                     this.setupLivePreview();
                     debugLog('Created Markdown preview', 'DEBUG');
                 }
 
-                // Re-register image upload handlers
-                this.setupImageUpload();
+                // Re-register image upload handlers (skip in compact mode)
+                if (!this.options.compact) {
+                    this.setupImageUpload();
+                }
 
                 // Show all Markdown-specific buttons
                 if (this.toolbar) {
@@ -2113,14 +2125,32 @@
         preventRedactorReInitialization();
 
         // Suche nach osTicket Thread Entry Forms
-        const selectors = [
+        // Primary textareas get full editor (toolbar + preview)
+        const primarySelectors = [
             'textarea[name="response"]',           // Staff reply
             'textarea[name="message"]',            // New ticket message
             'textarea[name="note"]',               // Internal note
-            'textarea.richtext',                   // osTicket custom form fields with WYSIWYG
             'textarea.markdown-enabled',           // Explizit markierte Textareas
             'textarea[data-markdown="true"]'       // Data-Attribute
         ];
+
+        // Secondary textareas get compact mode (toolbar only, no preview)
+        const secondarySelectors = [
+            'textarea.richtext'                    // osTicket custom form fields with WYSIWYG
+        ];
+
+        // Combined for backward compatibility
+        const selectors = [...primarySelectors, ...secondarySelectors];
+
+        /**
+         * Check if a textarea is a primary (full editor) textarea
+         */
+        function isPrimaryTextarea($textarea) {
+            const name = $textarea.attr('name') || '';
+            return ['response', 'message', 'note'].includes(name)
+                || $textarea.hasClass('markdown-enabled')
+                || $textarea.attr('data-markdown') === 'true';
+        }
 
         /**
          * Initialize Markdown Editor for textareas
@@ -2154,11 +2184,13 @@
 
                             // If Redactor is present OR we've waited long enough, initialize
                             if (hasRedactor || attemptCount >= maxAttempts) {
-                                debugLog(`Initializing editor for textarea: ${$textarea.attr('name')} (attempt ${attemptCount})`, 'INFO');
+                                const compact = !isPrimaryTextarea($textarea);
+                                debugLog(`Initializing editor for textarea: ${$textarea.attr('name')} (attempt ${attemptCount}, compact: ${compact})`, 'INFO');
 
                                 $textarea.markdownEditor({
                                     previewPosition: 'bottom',
-                                    debounceDelay: 500
+                                    debounceDelay: 500,
+                                    compact: compact
                                 });
                             }
                         });
@@ -2239,11 +2271,13 @@
 
                             // Check if visible (might have been hidden before)
                             if ($textarea.is(':visible') || $textarea.parent().is(':visible')) {
-                                debugLog(`Initializing dynamically added textarea: ${$textarea.attr('name')}`, 'INFO');
+                                const compact = !isPrimaryTextarea($textarea);
+                                debugLog(`Initializing dynamically added textarea: ${$textarea.attr('name')} (compact: ${compact})`, 'INFO');
 
                                 $textarea.markdownEditor({
                                     previewPosition: 'bottom',
-                                    debounceDelay: 500
+                                    debounceDelay: 500,
+                                    compact: compact
                                 });
                             }
                         });
