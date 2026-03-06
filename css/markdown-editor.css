@@ -363,6 +363,36 @@
 }
 
 /* ============================================
+   Compact Mode (secondary textareas like status reason)
+   ============================================ */
+
+.markdown-editor-container.markdown-compact {
+    margin: 4px 0;
+    box-shadow: none;
+}
+
+.markdown-compact .markdown-toolbar {
+    padding: 4px 6px;
+    gap: 2px;
+}
+
+.markdown-compact .markdown-toolbar-btn {
+    width: 26px;
+    height: 26px;
+}
+
+.markdown-compact .markdown-toolbar-btn svg {
+    width: 14px;
+    height: 14px;
+}
+
+.markdown-compact .markdown-textarea {
+    min-height: 80px;
+    padding: 8px;
+    font-size: 13px;
+}
+
+/* ============================================
    Format Switching States
    ============================================ */
 
