@@ -26,7 +26,8 @@ export function createPreview(editor) {
     editor.previewPane = $('<div>', {
         class: 'markdown-preview',
         'aria-live': 'polite',
-        'aria-label': 'Markdown Preview'
+        'aria-label': 'Markdown Preview',
+        html: '<p class="preview-empty">Preview will be shown here...</p>'
     });
 
     previewContainer.append(previewHeader, editor.previewPane);
