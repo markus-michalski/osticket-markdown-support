@@ -70,7 +70,7 @@ export function renderPreview(editor) {
 
     const markdown = editor.textarea.val();
     if (!markdown.trim()) {
-        editor.previewPane.html('<p class="preview-empty">Preview wird hier angezeigt...</p>');
+        editor.previewPane.html('<p class="preview-empty">Preview will be shown here...</p>');
         return;
     }
 
