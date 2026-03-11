@@ -25,6 +25,12 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ### Security
 - Nothing yet
 
+## [2.2.1] - 2026-03-11
+
+### Fixed
+- show preview placeholder on initial empty textarea
+- replace hardcoded German preview text with English
+
 ## [2.2.0] - 2026-03-06
 
 ### Added
@@ -119,3 +125,4 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 [2.1.0]: https://github.com/markus-michalski/osticket-markdown-support/releases/tag/v2.1.0
 [2.2.0]: https://github.com/markus-michalski/osticket-markdown-support/releases/tag/v2.2.0
+[2.2.1]: https://github.com/markus-michalski/osticket-markdown-support/releases/tag/v2.2.1
